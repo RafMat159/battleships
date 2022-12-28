@@ -15,6 +15,7 @@ import javafx.scene.Scene;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
@@ -65,30 +66,50 @@ public class BattleshipMain extends Application {
                 @Override
                 public void run() {
                     //czeka na odpowiedź
-                    lock.lock();
-                    String resp;
-                    try {
-                        resp = globalMessage;
-                    } finally {
-                        lock.unlock();
-                    }
-                    System.out.println("Taki event dostaje response jak odczyta po blokadzie: "+resp);
-                    // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
-                    if (resp.equals("hit")) {
-                        enemyTurn = false;
-                        //tutaj zamalować odpowiedni kafelek
-                    }
+//                    boolean respRead = false;
+//                    while (!respRead) {
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(100);
+                        }
+                        catch (InterruptedException e){
+                            return;
+                        }
+                        lock.lock();
+                        String resp;
+                        try {
+                            resp = globalMessage;
+                            System.out.println("Taki event dostaje response jak odczyta po blokadzie: " + resp);
+                            if (resp == null){
+                                return;
+                            }
+                            cell.setFill(Color.BLACK);
 
-                    if (enemyBoard.ships == 0) {
-                        System.out.println("YOU WIN");
-                        System.exit(0);
-                    }
+                            // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
+                            if (resp.equals("hit")) {
+                                enemyTurn = false;
+                                cell.setFill(Color.RED);
+                                //tutaj zamalować odpowiedni kafelek
+                            }
 
-                    if (resp.equals("miss")) {
-                        enemyTurn = true;
-                        send("end");
-                    }
+                            if (enemyBoard.ships == 0) {
+                                System.out.println("YOU WIN");
+                                System.exit(0);
+                            }
+//                            respRead = true;
+                            globalMessage = null;
 
+                            if (resp.equals("miss")) {
+                                enemyTurn = true;
+                                send("end");
+//                                break;
+                            }
+
+                        } finally {
+                            lock.unlock();
+                            System.out.println("CATCH");
+                        }
+
+//                    }
                 }
             }).start();
 
@@ -276,23 +297,13 @@ public class BattleshipMain extends Application {
                         if(msgFromGroupChat.length()==2) {
                             Cell cell = playerBoard.getCell(msgFromGroupChat.charAt(0)-'0', msgFromGroupChat.charAt(1)-'0');
                             System.out.println("Sprawdz pole: "+ cell.x+ cell.y);
-                            String msg = "";
                             if (cell.shoot()){
                                 send("hit");
-                                msg = "hit";
                                 if (playerBoard.ships == 0)
                                     send("end");
                             } else{
                                 send("miss");
-                                msg = "miss";
                                 enemyTurn = false;
-                            }
-
-                            lock.lock();
-                            try {
-                                globalMessage = msg;
-                            } finally {
-                                lock.unlock();
                             }
 
 //                            msgToEnemy = gameController.checkIfHit(msgFromGroupChat);
@@ -306,8 +317,29 @@ public class BattleshipMain extends Application {
 //                        } else if(msgFromGroupChat.equals("end")){
 //                            System.out.println("GAME WON");
                         }
-                        if (msgFromGroupChat.equals("end")) {
+                        else if (msgFromGroupChat.equals("end")) {
                             enemyTurn = false;
+                        }
+                        else if (msgFromGroupChat.equals("hit") || msgFromGroupChat.equals("miss")) {
+                            boolean respSend = false;
+//                            String msg = "";
+
+//                            while (!respSend) {
+//                                try {
+//                                    TimeUnit.MILLISECONDS.sleep(20);
+//                                } catch (InterruptedException e) {
+//                                    System.out.println("INTERRUPTUJE LISTEn");
+//                                    break;
+//                                }
+                                lock.lock();
+                                try {
+                                    globalMessage = msgFromGroupChat;
+                                    System.out.println("USTAWIA CZYU NIE"+globalMessage);
+                                    respSend = true;
+                                } finally {
+                                    lock.unlock();
+                                }
+//                            }
                         }
 //                        else{
 //                            String[] coordsAndValue = msgFromGroupChat.split(" ");
