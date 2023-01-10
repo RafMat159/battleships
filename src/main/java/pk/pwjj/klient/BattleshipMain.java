@@ -30,8 +30,6 @@ public class BattleshipMain extends Application {
 
     private boolean enemyTurn = false;
 
-    private Random random = new Random();
-
 
     private Socket socket;
     private BufferedReader bufferedReader;
@@ -113,8 +111,6 @@ public class BattleshipMain extends Application {
                 }
             }).start();
 
-//            if (enemyTurn)
-//                enemyMove();
         });
 
         playerBoard = new Board(false, event -> {
@@ -124,7 +120,7 @@ public class BattleshipMain extends Application {
             Board.Cell cell = (Board.Cell) event.getSource();
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
                 if (--shipsToPlace == 0) {
-                    startGame();
+                    running = true;
                 }
             }
         });
@@ -135,40 +131,6 @@ public class BattleshipMain extends Application {
         root.setCenter(vbox);
 
         return root;
-    }
-
-    private void enemyMove() {
-        while (enemyTurn) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-
-            Cell cell = playerBoard.getCell(x, y);
-            if (cell.wasShot)
-                continue;
-
-            enemyTurn = cell.shoot();
-
-            if (playerBoard.ships == 0) {
-                System.out.println("YOU LOSE");
-                System.exit(0);
-            }
-        }
-    }
-
-    private void startGame() {
-        // place enemy ships
-        int type = 5;
-
-        while (type > 0) {
-            int x = random.nextInt(10);
-            int y = random.nextInt(10);
-
-            if (enemyBoard.placeShip(new Ship(type, Math.random() < 0.5), x, y)) {
-                type--;
-            }
-        }
-
-        running = true;
     }
 
     @Override
@@ -210,28 +172,7 @@ public class BattleshipMain extends Application {
     public static void main(String[] args){
         launch();
     }
-//
-//    public BattleshipMain(Socket socket, String username){
-//        try{
-//            this.socket = socket;
-//            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-//            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-////            this.gameController = new GameController();
-////            this.battleshipMain = new BattleshipMain(this.bufferedWriter);
-//            this.username = username;
-//            this.waitForEnemyMove = false;
-//            send(username);
-//            if((bufferedReader.readLine().equals("first"))) {
-//                System.out.println("Starts First");
-//                this.waitForEnemyMove = false;
-//            } else{
-//                System.out.println("Starts second");
-//                this.waitForEnemyMove = true;
-//            }
-//        } catch (IOException e){
-//            closeEverything(socket, bufferedReader, bufferedWriter);
-//        }
-//    }
+
     private void send(String msg){
         try{
             System.out.println("SEND MESSAGE: "+msg);
@@ -244,45 +185,6 @@ public class BattleshipMain extends Application {
         }
     }
 
-//    public void printWaitInfo(){
-//        gameController.printOwnBoard();
-//        gameController.printEnemyBoard();
-//        System.out.println("Waiting for opponent...");
-//    }
-
-    public void sendMessage(){
-//            bufferedWriter.write(username);
-//            bufferedWriter.newLine();
-//            bufferedWriter.flush();
-
-//            printWaitInfo();
-
-        Scanner scanner = new Scanner(System.in);
-        while (socket.isConnected()){
-            while (this.waitForEnemyMove){
-                try {
-                    TimeUnit.MILLISECONDS.sleep(1000);
-                }
-                catch (InterruptedException e){
-                    break;
-                }
-            }
-            System.out.println("Your move: ");
-            String messageToSend = scanner.nextLine();
-            this.send(messageToSend);
-            this.waitForEnemyMove=true;
-        }
-    }
-
-    public String readMessage(){
-        String msg = "";
-        try{
-            msg = bufferedReader.readLine();
-        } catch (IOException e){
-            closeEverything(socket, bufferedReader, bufferedWriter);
-        }
-        return msg;
-    }
 
     public void listenForMessage(){
         new Thread(new Runnable() {
@@ -290,7 +192,6 @@ public class BattleshipMain extends Application {
             public void run() {
                 String msgFromGroupChat;
                 while (socket.isConnected()){
-                    String msgToEnemy = "";
                     try{
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: "+msgFromGroupChat);
@@ -305,49 +206,20 @@ public class BattleshipMain extends Application {
                                 send("miss");
                                 enemyTurn = false;
                             }
-
-//                            msgToEnemy = gameController.checkIfHit(msgFromGroupChat);
-//                                send(msgFromGroupChat+ " hit");
-//                                send(msgToEnemy);
-//                                System.out.println("GAME LOST");
-//                            } else {
-//                                send(msgFromGroupChat + " " + msgToEnemy);
-//                            }
-//                            waitForEnemyMove = false;
-//                        } else if(msgFromGroupChat.equals("end")){
-//                            System.out.println("GAME WON");
                         }
                         else if (msgFromGroupChat.equals("end")) {
                             enemyTurn = false;
                         }
                         else if (msgFromGroupChat.equals("hit") || msgFromGroupChat.equals("miss")) {
-                            boolean respSend = false;
-//                            String msg = "";
-
-//                            while (!respSend) {
-//                                try {
-//                                    TimeUnit.MILLISECONDS.sleep(20);
-//                                } catch (InterruptedException e) {
-//                                    System.out.println("INTERRUPTUJE LISTEn");
-//                                    break;
-//                                }
                                 lock.lock();
                                 try {
                                     globalMessage = msgFromGroupChat;
                                     System.out.println("USTAWIA CZYU NIE"+globalMessage);
-                                    respSend = true;
                                 } finally {
                                     lock.unlock();
                                 }
-//                            }
                         }
-//                        else{
-//                            String[] coordsAndValue = msgFromGroupChat.split(" ");
-//                            if (coordsAndValue.length > 1){
-//                                if (coordsAndValue[1].equals("miss") || coordsAndValue[1].equals("hit"))
-//                                    gameController.addToEnemyBoard(coordsAndValue);
-//                            }
-//                        }
+
                         System.out.println("RECIEVED: "+msgFromGroupChat);
                     } catch (IOException e){
                         closeEverything(socket, bufferedReader, bufferedWriter);
