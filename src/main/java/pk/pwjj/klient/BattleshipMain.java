@@ -83,26 +83,34 @@ public class BattleshipMain extends Application {
                             if (resp == null){
                                 return;
                             }
+
                             cell.setFill(Color.BLACK);
 
                             // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
-                            if (resp.equals("hit")) {
+                            if (resp.equals("hit") || resp.equals("lose") || resp.equals("win")) {
                                 enemyTurn = false;
                                 cell.setFill(Color.RED);
+                                cell.setDisable(true);
+                                if(resp.equals("lose")){
+
+                                } else if(resp.equals("win")){
+
+                                }
                                 //tutaj zamalować odpowiedni kafelek
                             }
 
-                            if (enemyBoard.ships == 0) {
-                                System.out.println("YOU WIN");
-                                //start = false;
-                                System.exit(0);
-                            }
+//                            if (resp.equals("lose")) {
+//                                System.out.println("YOU WIN");
+//                                //start = false;
+//                                System.exit(0);
+//                            }
 //                            respRead = true;
                             globalMessage = null;
 
                             if (resp.equals("miss")) {
                                 enemyTurn = true;
                                 send("end");
+                                cell.setDisable(true);
 //                                break;
                             }
 
@@ -212,8 +220,9 @@ public class BattleshipMain extends Application {
                             System.out.println("Sprawdz pole: "+ cell.x+ cell.y);
                             if (cell.shoot()){
                                 send("hit");
-                                if (playerBoard.ships == 0)
-                                    send("end");
+                                if (playerBoard.ships == 0) {
+                                    send("win");
+                                }
                             } else{
                                 send("miss");
                                 enemyTurn = false;
@@ -232,7 +241,16 @@ public class BattleshipMain extends Application {
                                     lock.unlock();
                                 }
                         }
+                        if(msgFromGroupChat.equals("lose") && start){
+                            System.out.println("YOU LOOOOOOSE");
 
+                            start = false;
+                        }
+                        if(msgFromGroupChat.equals("win") && start){
+                            System.out.println("YOU WIN");
+                            send("lose");
+                            start = false;
+                        }
                         System.out.println("RECIEVED: "+msgFromGroupChat);
                     } catch (IOException e){
                         closeEverything(socket, bufferedReader, bufferedWriter);
