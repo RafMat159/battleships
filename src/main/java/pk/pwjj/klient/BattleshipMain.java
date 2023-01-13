@@ -24,6 +24,7 @@ import pk.pwjj.klient.Board.Cell;
 public class BattleshipMain extends Application {
 
     private boolean running = false;
+    private boolean start = false;
     private Board enemyBoard, playerBoard;
 
     private int shipsToPlace = 5;
@@ -57,8 +58,10 @@ public class BattleshipMain extends Application {
             }
 
             //wysyła wiadomość
-            send(String.valueOf(cell.x)+String.valueOf(cell.y));
-            enemyTurn = true;
+            if(start) {
+                send(String.valueOf(cell.x) + String.valueOf(cell.y));
+                enemyTurn = true;
+            }
 
             new Thread(new Runnable() {
                 @Override
@@ -91,6 +94,7 @@ public class BattleshipMain extends Application {
 
                             if (enemyBoard.ships == 0) {
                                 System.out.println("YOU WIN");
+                                //start = false;
                                 System.exit(0);
                             }
 //                            respRead = true;
@@ -121,6 +125,7 @@ public class BattleshipMain extends Application {
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
                 if (--shipsToPlace == 0) {
                     running = true;
+                    send("Your opponent has finished placing ships");
                 }
             }
         });
@@ -152,9 +157,11 @@ public class BattleshipMain extends Application {
             send(username);
             if((bufferedReader.readLine().equals("first"))) {
                 System.out.println("Starts First");
+                enemyTurn = false;
                 this.waitForEnemyMove = false;
             } else{
                 System.out.println("Starts second");
+                enemyTurn = true;
                 this.waitForEnemyMove = true;
             }
         } catch (IOException e){
@@ -163,7 +170,7 @@ public class BattleshipMain extends Application {
         listenForMessage();
 
         Scene scene = new Scene(createContent());
-        primaryStage.setTitle("Battleship");
+        primaryStage.setTitle(username);
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
@@ -191,11 +198,16 @@ public class BattleshipMain extends Application {
             @Override
             public void run() {
                 String msgFromGroupChat;
+
                 while (socket.isConnected()){
                     try{
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: "+msgFromGroupChat);
-                        if(msgFromGroupChat.length()==2) {
+
+                        if(msgFromGroupChat.equals("Your opponent has finished placing ships"))
+                            start = true;
+
+                        if(msgFromGroupChat.length()==2 && start) {
                             Cell cell = playerBoard.getCell(msgFromGroupChat.charAt(0)-'0', msgFromGroupChat.charAt(1)-'0');
                             System.out.println("Sprawdz pole: "+ cell.x+ cell.y);
                             if (cell.shoot()){
@@ -207,10 +219,11 @@ public class BattleshipMain extends Application {
                                 enemyTurn = false;
                             }
                         }
-                        else if (msgFromGroupChat.equals("end")) {
+                        else if (msgFromGroupChat.equals("end") && start) {
                             enemyTurn = false;
+
                         }
-                        else if (msgFromGroupChat.equals("hit") || msgFromGroupChat.equals("miss")) {
+                        else if ((msgFromGroupChat.equals("hit") || msgFromGroupChat.equals("miss")) && start) {
                                 lock.lock();
                                 try {
                                     globalMessage = msgFromGroupChat;
