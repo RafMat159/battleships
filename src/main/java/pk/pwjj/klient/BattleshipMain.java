@@ -9,16 +9,25 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import javafx.stage.StageStyle;
 import pk.pwjj.klient.Board.Cell;
 
 public class BattleshipMain extends Application {
@@ -42,9 +51,10 @@ public class BattleshipMain extends Application {
     private Boolean waitForEnemyMove;
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
+    private BorderPane root;
 
     private Parent createContent() {
-        BorderPane root = new BorderPane();
+        root = new BorderPane();
         root.setPrefSize(600, 800);
 
         root.setRight(new Text("RIGHT SIDEBAR - CONTROLS"));
@@ -145,8 +155,6 @@ public class BattleshipMain extends Application {
             this.socket = socket;
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            this.gameController = new GameController();
-//            this.battleshipMain = new BattleshipMain(this.bufferedWriter);
             this.waitForEnemyMove = false;
             System.out.println("USERNAME: "+this.username);
             send(this.username);
@@ -163,8 +171,62 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
-        listenForMessage();
+    }
+    public void init(Stage stage) {
+        Platform.runLater(()-> {
+            try {
+               // this.primaryStage = primaryStage;
 
+                StackPane root = new StackPane();
+
+                VBox vBox = new VBox();
+
+                vBox.setSpacing(8);
+                vBox.setPadding(new Insets(10, 10, 10, 10));
+
+                TextField login= new TextField();
+                PasswordField password=new PasswordField();
+                Button button=new Button("LOGIN");
+                button.setOnAction(actionEvent-> {
+                    System.out.println(login.getText()+" "+password.getText());
+                    if(login.getText().length()!=0&&password.getText().length()!=0) {
+                        try {
+                            newConnection();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        // do zmiany
+//                        newGame();
+                        listenForMessage();
+                    }else{
+                        Alert a = new Alert(Alert.AlertType.NONE);
+                        // set alert type
+                        a.setAlertType(Alert.AlertType.WARNING);
+                        //a.setContentText("F");
+                        a.setHeaderText("Nie uzupełniono wszystkich pól!");
+                        a.setTitle("Błąd!");
+                        // show the dialog
+                        a.show();
+                    }
+                });
+
+                vBox.getChildren().addAll(
+                        new Label("Your Username"),
+                        login,
+                        new Label("Your Password"),
+                        password,
+                        button);
+                root.getChildren().addAll(vBox);
+
+                Scene scene = new Scene(root, 400, 600);
+
+                stage.setScene(scene);
+                stage.show();
+            } catch (Exception e) {
+                System.out.println("BŁĄD jakiś");
+                e.printStackTrace();
+            }
+        });
     }
 
     public void askForNewGame(){
@@ -208,6 +270,17 @@ public class BattleshipMain extends Application {
 //        listenForMessage();
         buildScene();
 
+//        Platform.runLater(()->{
+//            try {
+//                init(this.primaryStage);
+//
+//                // startNewGame = false;
+//            } catch (Exception e) {
+//                System.out.println("BŁĄD jakiś");
+//                e.printStackTrace();
+//            }
+//        });
+
     }
 
     public static void main(String[] args) {
@@ -244,6 +317,54 @@ public class BattleshipMain extends Application {
         }
     }
 
+    public void endGameScreen(){
+        //enemyTurn = true;
+
+        Platform.runLater(()-> {
+            try {
+                //postion
+                double CENTER_ON_SCREEN_X_FRACTION = 1.0f / 2;
+                double CENTER_ON_SCREEN_Y_FRACTION = 1.0f / 3;
+
+                Screen screen = Screen.getPrimary();
+                Rectangle2D bounds = screen.getVisualBounds();
+              //  System.out.println(bounds.getWidth());
+               // System.out.println(primaryStage.getWidth());
+//                double centerX = bounds.getMinX() +(bounds.getWidth() - root.getWidth())*CENTER_ON_SCREEN_X_FRACTION;// bounds.getMinX() +
+//                double centerY = bounds.getMinY() +(bounds.getHeight() -  root.getHeight())*CENTER_ON_SCREEN_Y_FRACTION;// bounds.getMinY() +
+                double centerX =  (bounds.getWidth() - primaryStage.getWidth()) /2;
+                double centerY =  (bounds.getHeight() - primaryStage.getHeight()) /2;
+
+                root.setEffect(new GaussianBlur());
+
+                VBox pauseRoot = new VBox(5);
+                pauseRoot.getChildren().add(new Label("Paused"));
+                pauseRoot.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8);");
+                pauseRoot.setAlignment(Pos.CENTER);
+                pauseRoot.setPadding(new Insets(20));
+
+                Button resume = new Button("Resume");
+                pauseRoot.getChildren().add(resume);
+                pauseRoot.setLayoutX(centerX);
+                pauseRoot.setLayoutY(centerY);
+
+                Stage popupStage = new Stage(StageStyle.TRANSPARENT);
+                popupStage.initOwner(primaryStage);
+                popupStage.initModality(Modality.APPLICATION_MODAL);
+                popupStage.setScene(new Scene(pauseRoot, Color.TRANSPARENT));
+
+                resume.setOnAction(event -> {
+                    root.setEffect(null);
+                    // animation.play();
+                    popupStage.hide();
+                });
+                popupStage.show();
+            } catch (Exception e) {
+                System.out.println("BŁĄD jakiś");
+                e.printStackTrace();
+            }
+        });
+    }
     public void listenForMessage(){
         new Thread(new Runnable() {
             @Override
