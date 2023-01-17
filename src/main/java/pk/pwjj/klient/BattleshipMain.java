@@ -9,6 +9,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -30,6 +31,8 @@ public class BattleshipMain extends Application {
     private int shipsToPlace = 5;
 
     private boolean enemyTurn = false;
+
+    private Boolean startNewGame = false;
 
     private Stage primaryStage;
 
@@ -114,6 +117,7 @@ public class BattleshipMain extends Application {
 
         });
 
+        shipsToPlace = 5;
         playerBoard = new Board(false, event -> {
             if (running)
                 return;
@@ -135,7 +139,7 @@ public class BattleshipMain extends Application {
         return root;
     }
 
-    private void newConnection() throws Exception{
+    public void newConnection() throws Exception{
         Socket socket = new Socket("localhost", 1234);
 
         try {
@@ -145,6 +149,7 @@ public class BattleshipMain extends Application {
 //            this.gameController = new GameController();
 //            this.battleshipMain = new BattleshipMain(this.bufferedWriter);
             this.waitForEnemyMove = false;
+            System.out.println("USERNAME: "+this.username);
             send(this.username);
             //readLine - operacja blokująca, zawsze czekać będzie na odpowiedź od serwera
             if ((bufferedReader.readLine().equals("first"))) {
@@ -159,14 +164,17 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
+        listenForMessage();
+
     }
 
-    private void newGame(){
+    public void newGame(){
         Scene scene = new Scene(createContent());
         this.primaryStage.setTitle(username);
         this.primaryStage.setScene(scene);
         this.primaryStage.setResizable(false);
         this.primaryStage.show();
+
     }
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -177,7 +185,7 @@ public class BattleshipMain extends Application {
         this.primaryStage = primaryStage;
 
         newConnection();
-        listenForMessage();
+//        listenForMessage();
         newGame();
 
     }
@@ -249,19 +257,26 @@ public class BattleshipMain extends Application {
                                     case "win":
                                         if (msgFromGroupChat.equals("win")) {
                                             System.out.println("YOU WIN");
-                                            closeEverything(socket, bufferedReader, bufferedWriter);
+//                                            closeEverything(socket, bufferedReader, bufferedWriter);
                                             start = false;
                                             System.out.println("START NEW GAME?");
                                             Scanner scanner = new Scanner(System.in);
                                             String choice = scanner.next();
                                             System.out.println(choice);
-                                            if(choice=="yes"){
-                                                try {
-                                                    newConnection();
-                                                    newGame();
-                                                } catch (Exception e) {
-                                                    System.out.println("COULDN'T CREATE NEW GAME. EXITING...");
-                                                }
+                                            if(choice.equals("yes")){
+                                                send("new game");
+//                                                startNewGame = true;
+//                                                closeEverything(socket, bufferedReader,bufferedWriter);
+                                                Platform.runLater(()->{
+                                                    try {
+//                                                        newConnection();
+                                                        newGame();
+//                                                        startNewGame = false;
+                                                    } catch (Exception e) {
+                                                        System.out.println("BŁĄD jakiś");
+                                                        e.printStackTrace();
+                                                    }
+                                                });
                                             }
                                             break;
                                         }
