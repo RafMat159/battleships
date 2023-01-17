@@ -52,10 +52,12 @@ public class BattleshipMain extends Application {
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
     private BorderPane root;
+    private int width = 600;
+    private int height = 800;
 
     private Parent createContent() {
         root = new BorderPane();
-        root.setPrefSize(600, 800);
+        root.setPrefSize(width, height);
 
         root.setRight(new Text("RIGHT SIDEBAR - CONTROLS"));
 
@@ -133,6 +135,7 @@ public class BattleshipMain extends Application {
 
             Board.Cell cell = (Board.Cell) event.getSource();
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
+                endGameScreen();
                 if (--shipsToPlace == 0) {
                     running = true;
                     send("Your opponent has finished placing ships");
@@ -171,6 +174,7 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
+        listenForMessage();
     }
     public void init(Stage stage) {
         Platform.runLater(()-> {
@@ -235,6 +239,7 @@ public class BattleshipMain extends Application {
         Scanner scanner = new Scanner(System.in);
         String choice = scanner.next();
         System.out.println(choice);
+        endGameScreen();
         if(choice.equals("yes")) {
             send("new game");
             Platform.runLater(()->{
@@ -263,11 +268,11 @@ public class BattleshipMain extends Application {
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your name");
-        this.username = scanner.nextLine();
+//        this.username = scanner.nextLine();
+        this.username = "1";
         this.primaryStage = primaryStage;
 
         newConnection();
-//        listenForMessage();
         buildScene();
 
 //        Platform.runLater(()->{
@@ -332,8 +337,6 @@ public class BattleshipMain extends Application {
                // System.out.println(primaryStage.getWidth());
 //                double centerX = bounds.getMinX() +(bounds.getWidth() - root.getWidth())*CENTER_ON_SCREEN_X_FRACTION;// bounds.getMinX() +
 //                double centerY = bounds.getMinY() +(bounds.getHeight() -  root.getHeight())*CENTER_ON_SCREEN_Y_FRACTION;// bounds.getMinY() +
-                double centerX =  (bounds.getWidth() - primaryStage.getWidth()) /2;
-                double centerY =  (bounds.getHeight() - primaryStage.getHeight()) /2;
 
                 root.setEffect(new GaussianBlur());
 
@@ -342,6 +345,11 @@ public class BattleshipMain extends Application {
                 pauseRoot.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8);");
                 pauseRoot.setAlignment(Pos.CENTER);
                 pauseRoot.setPadding(new Insets(20));
+
+                double centerX = root.getLayoutX();
+                double centerY = root.getLayoutY();
+
+//                System.out.println();
 
                 Button resume = new Button("Resume");
                 pauseRoot.getChildren().add(resume);
@@ -352,13 +360,16 @@ public class BattleshipMain extends Application {
                 popupStage.initOwner(primaryStage);
                 popupStage.initModality(Modality.APPLICATION_MODAL);
                 popupStage.setScene(new Scene(pauseRoot, Color.TRANSPARENT));
-
+                popupStage.setX(primaryStage.getX() + primaryStage.getWidth() / 2 - pauseRoot.getWidth());
+                popupStage.setY(primaryStage.getY() + primaryStage.getHeight() / 2 - pauseRoot.getHeight());
+//                popupStage.getX();
                 resume.setOnAction(event -> {
                     root.setEffect(null);
                     // animation.play();
                     popupStage.hide();
                 });
                 popupStage.show();
+                System.out.println(popupStage.getX());
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
