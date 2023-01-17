@@ -61,8 +61,6 @@ public class ClientHandler implements Runnable{
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.clientUsername = bufferedReader.readLine();
-//            clientHandlers.add(this);
-//            table = getClosestAvailable();
             this.addToTable();
             System.out.println("Dodano do stolu: "+table);
             broadcastMessage("SERVER:"+clientUsername+" joined chat");
@@ -91,7 +89,7 @@ public class ClientHandler implements Runnable{
         ArrayList<ClientHandler> arr = clientMap.get(table);
         for (ClientHandler clientHandler : arr){
             try {
-                if(!clientHandler.clientUsername.equals((clientUsername))){
+                if(!clientHandler.clientUsername.equals((this.clientUsername))){
                     clientHandler.bufferedWriter.write(messageToSend);
                     clientHandler.bufferedWriter.newLine();
                     clientHandler.bufferedWriter.flush();

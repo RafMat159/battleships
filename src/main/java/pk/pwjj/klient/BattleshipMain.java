@@ -24,12 +24,14 @@ import pk.pwjj.klient.Board.Cell;
 public class BattleshipMain extends Application {
 
     private boolean running = false;
+    private boolean start = false;
     private Board enemyBoard, playerBoard;
 
     private int shipsToPlace = 5;
 
     private boolean enemyTurn = false;
 
+    private Stage primaryStage;
 
     private Socket socket;
     private BufferedReader bufferedReader;
@@ -57,8 +59,10 @@ public class BattleshipMain extends Application {
             }
 
             //wysyła wiadomość
-            send(String.valueOf(cell.x)+String.valueOf(cell.y));
-            enemyTurn = true;
+            if (start) {
+                send(String.valueOf(cell.x) + String.valueOf(cell.y));
+                enemyTurn = true;
+            }
 
             new Thread(new Runnable() {
                 @Override
@@ -66,46 +70,43 @@ public class BattleshipMain extends Application {
                     //czeka na odpowiedź
 //                    boolean respRead = false;
 //                    while (!respRead) {
-                        try {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                        }
-                        catch (InterruptedException e){
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                    lock.lock();
+                    String resp;
+                    try {
+                        resp = globalMessage;
+                        System.out.println("Taki event dostaje response jak odczyta po blokadzie: " + resp);
+                        if (resp == null) {
                             return;
                         }
-                        lock.lock();
-                        String resp;
-                        try {
-                            resp = globalMessage;
-                            System.out.println("Taki event dostaje response jak odczyta po blokadzie: " + resp);
-                            if (resp == null){
-                                return;
-                            }
-                            cell.setFill(Color.BLACK);
 
-                            // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
-                            if (resp.equals("hit")) {
-                                enemyTurn = false;
-                                cell.setFill(Color.RED);
-                                //tutaj zamalować odpowiedni kafelek
-                            }
+                        cell.setFill(Color.BLACK);
 
-                            if (enemyBoard.ships == 0) {
-                                System.out.println("YOU WIN");
-                                System.exit(0);
-                            }
-//                            respRead = true;
-                            globalMessage = null;
-
-                            if (resp.equals("miss")) {
-                                enemyTurn = true;
-                                send("end");
-//                                break;
-                            }
-
-                        } finally {
-                            lock.unlock();
-                            System.out.println("CATCH");
+                        // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
+                        if (resp.equals("hit")) {
+                            enemyTurn = false;
+                            cell.setFill(Color.RED);
+                            cell.setDisable(true);
+                            //tutaj zamalować odpowiedni kafelek
                         }
+
+                        globalMessage = null;
+
+                        if (resp.equals("miss")) {
+                            enemyTurn = true;
+                            send("end");
+                            cell.setDisable(true);
+//                                break;
+                        }
+
+                    } finally {
+                        lock.unlock();
+                        System.out.println("CATCH");
+                    }
 
 //                    }
                 }
@@ -121,6 +122,7 @@ public class BattleshipMain extends Application {
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
                 if (--shipsToPlace == 0) {
                     running = true;
+                    send("Your opponent has finished placing ships");
                 }
             }
         });
@@ -133,95 +135,144 @@ public class BattleshipMain extends Application {
         return root;
     }
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter your name");
-        String username = scanner.nextLine();
+    private void newConnection() throws Exception{
         Socket socket = new Socket("localhost", 1234);
 
-        try{
+        try {
             this.socket = socket;
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 //            this.gameController = new GameController();
 //            this.battleshipMain = new BattleshipMain(this.bufferedWriter);
-            this.username = username;
             this.waitForEnemyMove = false;
-            send(username);
-            if((bufferedReader.readLine().equals("first"))) {
+            send(this.username);
+            //readLine - operacja blokująca, zawsze czekać będzie na odpowiedź od serwera
+            if ((bufferedReader.readLine().equals("first"))) {
                 System.out.println("Starts First");
+                enemyTurn = false;
                 this.waitForEnemyMove = false;
-            } else{
+            } else {
                 System.out.println("Starts second");
+                enemyTurn = true;
                 this.waitForEnemyMove = true;
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
-        listenForMessage();
-
-        Scene scene = new Scene(createContent());
-        primaryStage.setTitle("Battleship");
-        primaryStage.setScene(scene);
-        primaryStage.setResizable(false);
-        primaryStage.show();
     }
 
-    public static void main(String[] args){
+    private void newGame(){
+        Scene scene = new Scene(createContent());
+        this.primaryStage.setTitle(username);
+        this.primaryStage.setScene(scene);
+        this.primaryStage.setResizable(false);
+        this.primaryStage.show();
+    }
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter your name");
+        this.username = scanner.nextLine();
+        this.primaryStage = primaryStage;
+
+        newConnection();
+        listenForMessage();
+        newGame();
+
+    }
+
+    public static void main(String[] args) {
         launch();
     }
 
-    private void send(String msg){
-        try{
-            System.out.println("SEND MESSAGE: "+msg);
+    private void send(String msg) {
+        try {
+            System.out.println("SEND MESSAGE: " + msg);
             bufferedWriter.flush();
             bufferedWriter.write(msg);
             bufferedWriter.newLine();
             bufferedWriter.flush();
-        } catch (IOException e){
+        } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
     }
 
+
+    public void checkHit(String cords) {
+        Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
+        System.out.println("Sprawdz pole: " + cell.x + cell.y);
+        if (cell.shoot()) {
+            send("hit");
+            if (playerBoard.ships == 0) {
+                send("win");
+                System.out.println("GAME LOST");
+                enemyTurn = true;
+            }
+        } else {
+            send("miss");
+            enemyTurn = false;
+        }
+    }
 
     public void listenForMessage(){
         new Thread(new Runnable() {
             @Override
             public void run() {
                 String msgFromGroupChat;
-                while (socket.isConnected()){
-                    try{
+
+                while (socket.isConnected()) {
+                    try {
                         msgFromGroupChat = bufferedReader.readLine();
-                        System.out.println("Co dostał: "+msgFromGroupChat);
-                        if(msgFromGroupChat.length()==2) {
-                            Cell cell = playerBoard.getCell(msgFromGroupChat.charAt(0)-'0', msgFromGroupChat.charAt(1)-'0');
-                            System.out.println("Sprawdz pole: "+ cell.x+ cell.y);
-                            if (cell.shoot()){
-                                send("hit");
-                                if (playerBoard.ships == 0)
-                                    send("end");
+                        System.out.println("Co dostał: " + msgFromGroupChat);
+
+                        if (msgFromGroupChat.equals("Your opponent has finished placing ships"))
+                            start = true;
+
+                        if (start) {
+                            if (msgFromGroupChat.length() == 2) {
+                                checkHit(msgFromGroupChat);
                             } else{
-                                send("miss");
-                                enemyTurn = false;
+                                switch (msgFromGroupChat){
+                                    case "end":
+                                        enemyTurn = false;
+                                        break;
+                                    case "hit": case "miss":
+                                        lock.lock();
+                                        try {
+                                            globalMessage = msgFromGroupChat;
+                                            System.out.println("USTAWIA CZYU NIE" + globalMessage);
+                                        } finally {
+                                            lock.unlock();
+                                        }
+                                        break;
+                                    case "win":
+                                        if (msgFromGroupChat.equals("win")) {
+                                            System.out.println("YOU WIN");
+                                            closeEverything(socket, bufferedReader, bufferedWriter);
+                                            start = false;
+                                            System.out.println("START NEW GAME?");
+                                            Scanner scanner = new Scanner(System.in);
+                                            String choice = scanner.next();
+                                            System.out.println(choice);
+                                            if(choice=="yes"){
+                                                try {
+                                                    newConnection();
+                                                    newGame();
+                                                } catch (Exception e) {
+                                                    System.out.println("COULDN'T CREATE NEW GAME. EXITING...");
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    default:
+                                        System.out.println("COMMAND NOT RECOGNIZED");
+                                }
                             }
                         }
-                        else if (msgFromGroupChat.equals("end")) {
-                            enemyTurn = false;
-                        }
-                        else if (msgFromGroupChat.equals("hit") || msgFromGroupChat.equals("miss")) {
-                                lock.lock();
-                                try {
-                                    globalMessage = msgFromGroupChat;
-                                    System.out.println("USTAWIA CZYU NIE"+globalMessage);
-                                } finally {
-                                    lock.unlock();
-                                }
-                        }
 
-                        System.out.println("RECIEVED: "+msgFromGroupChat);
-                    } catch (IOException e){
+                        System.out.println("RECIEVED: " + msgFromGroupChat);
+                    } catch (IOException e) {
                         closeEverything(socket, bufferedReader, bufferedWriter);
                     }
                 }
@@ -229,18 +280,18 @@ public class BattleshipMain extends Application {
         }).start();
     }
 
-    public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
-        try{
-            if(bufferedReader !=null){
+    public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
+        try {
+            if (bufferedReader != null) {
                 bufferedReader.close();
             }
-            if(bufferedWriter !=null){
+            if (bufferedWriter != null) {
                 bufferedWriter.close();
             }
-            if(socket !=null){
+            if (socket != null) {
                 socket.close();
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
