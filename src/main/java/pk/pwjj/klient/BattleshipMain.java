@@ -2,7 +2,6 @@ package pk.pwjj.klient;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -168,7 +167,28 @@ public class BattleshipMain extends Application {
 
     }
 
-    public void newGame(){
+    public void askForNewGame(){
+
+        System.out.println("START NEW GAME?");
+        Scanner scanner = new Scanner(System.in);
+        String choice = scanner.next();
+        System.out.println(choice);
+        if(choice.equals("yes")) {
+            send("new game");
+            Platform.runLater(()->{
+                try {
+                    running = false;
+                    buildScene();
+                } catch (Exception e) {
+                    System.out.println("BŁĄD jakiś");
+                    e.printStackTrace();
+                }
+            });
+        }
+
+    }
+
+    public void buildScene(){
         Scene scene = new Scene(createContent());
         this.primaryStage.setTitle(username);
         this.primaryStage.setScene(scene);
@@ -186,7 +206,7 @@ public class BattleshipMain extends Application {
 
         newConnection();
 //        listenForMessage();
-        newGame();
+        buildScene();
 
     }
 
@@ -216,6 +236,7 @@ public class BattleshipMain extends Application {
                 send("win");
                 System.out.println("GAME LOST");
                 enemyTurn = true;
+                askForNewGame();
             }
         } else {
             send("miss");
@@ -257,27 +278,8 @@ public class BattleshipMain extends Application {
                                     case "win":
                                         if (msgFromGroupChat.equals("win")) {
                                             System.out.println("YOU WIN");
-//                                            closeEverything(socket, bufferedReader, bufferedWriter);
                                             start = false;
-                                            System.out.println("START NEW GAME?");
-                                            Scanner scanner = new Scanner(System.in);
-                                            String choice = scanner.next();
-                                            System.out.println(choice);
-                                            if(choice.equals("yes")){
-                                                send("new game");
-//                                                startNewGame = true;
-//                                                closeEverything(socket, bufferedReader,bufferedWriter);
-                                                Platform.runLater(()->{
-                                                    try {
-//                                                        newConnection();
-                                                        newGame();
-//                                                        startNewGame = false;
-                                                    } catch (Exception e) {
-                                                        System.out.println("BŁĄD jakiś");
-                                                        e.printStackTrace();
-                                                    }
-                                                });
-                                            }
+                                            askForNewGame();
                                             break;
                                         }
                                     default:
