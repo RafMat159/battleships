@@ -6,6 +6,8 @@ open module pk.pwjj.klient {
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
     requires hibernate.jpa;
+    requires org.hibernate.orm.core;
+    requires java.persistence;
 
     exports pk.pwjj.klient;
 }
