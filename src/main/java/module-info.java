@@ -5,7 +5,9 @@ open module pk.pwjj.klient {
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
-    requires hibernate.jpa;
+    requires java.naming;
+    requires password4j;
+  //  requires hibernate.jpa;
     requires org.hibernate.orm.core;
     requires java.persistence;
 

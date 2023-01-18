@@ -28,6 +28,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import javafx.stage.StageStyle;
+import pk.pwjj.controller.LoginController;
 import pk.pwjj.klient.Board.Cell;
 
 public class BattleshipMain extends Application {
@@ -54,6 +55,8 @@ public class BattleshipMain extends Application {
     private BorderPane root;
     private int width = 600;
     private int height = 800;
+
+    LoginController loginController = new LoginController();
 
     private Parent createContent() {
         root = new BorderPane();
@@ -360,9 +363,11 @@ public class BattleshipMain extends Application {
                 popupStage.setY(primaryStage.getY() + primaryStage.getHeight() / 2 - pauseRoot.getHeight());
 //                popupStage.getX();
                 resume.setOnAction(event -> {
-                    root.setEffect(null);
+//                    root.setEffect(null);
                     // animation.play();
-                    popupStage.hide();
+//                    popupStage.hide();
+                    int result = loginController.login("username", "password");
+                    System.out.println("Request result: "+result);
                 });
                 popupStage.show();
                 System.out.println(popupStage.getX());

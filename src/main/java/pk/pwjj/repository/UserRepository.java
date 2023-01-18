@@ -10,7 +10,19 @@ import java.util.Optional;
 
 public class UserRepository {
 
-    public Optional<User> findUser(String username){
+    private static UserRepository userRepository;
+
+    private UserRepository(){
+    }
+
+    public static UserRepository getInstance(){
+        if(userRepository == null)
+            userRepository = new UserRepository();
+        return userRepository;
+    }
+
+
+    public Optional<User> findUserByUsername(String username){
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
         var trasaction = session.beginTransaction();
 
@@ -29,12 +41,13 @@ public class UserRepository {
 
         try{
             session.save(user);
+            session.close();
         }catch(Exception e){
             e.printStackTrace();
         }
-
-        trasaction.commit();
-        session.close();
+        finally {
+            trasaction.commit();
+        }
     }
 
 
