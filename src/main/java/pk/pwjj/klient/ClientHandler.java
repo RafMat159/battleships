@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 public class ClientHandler implements Runnable{
 
@@ -69,7 +70,16 @@ public class ClientHandler implements Runnable{
         }
     }
 
-
+    public void newGame(){
+        clientMap.get(table).remove(this);
+        System.out.println("Usunięto ze stołu: "+table);
+        try{
+            this.addToTable();
+            System.out.println("Dodano do stolu: "+table);
+        } catch (IOException e){
+            closeEverything(socket, bufferedReader, bufferedWriter);
+        }
+    }
     @Override
     public void run(){
         String messageFromClient;
@@ -77,8 +87,12 @@ public class ClientHandler implements Runnable{
         while (socket.isConnected()){
             try{
                 messageFromClient = bufferedReader.readLine();
-                broadcastMessage(messageFromClient);
-            } catch (IOException e){
+                if(messageFromClient.equals("new game")){
+                    this.newGame();
+                } else {
+                    broadcastMessage(messageFromClient);
+                }
+            } catch (Exception e){
                 closeEverything(socket,  bufferedReader, bufferedWriter);
                 break;
             }
@@ -104,7 +118,9 @@ public class ClientHandler implements Runnable{
     public void removeClientHanlder(){
         clientMap.get(table).remove(this);
 //        clientHandlers.remove(this);
+        System.out.println("To zapewne tu się wywala");
         broadcastMessage("SERVER: "+clientUsername+" has left");
+        System.out.println("chyba ta");
     }
 
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
