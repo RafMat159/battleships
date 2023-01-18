@@ -29,6 +29,11 @@ public class Ranking {
         this.user = user;
     }
 
+    public Ranking(Integer gameLost, Integer gameWin) {
+        this.gameLost = gameLost;
+        this.gameWin = gameWin;
+    }
+
     @OneToOne(cascade = CascadeType.ALL)
     @MapsId
     @JoinColumn(name = "user_id")
