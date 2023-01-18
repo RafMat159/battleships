@@ -195,16 +195,20 @@ public class BattleshipMain extends Application {
                 button.setOnAction(actionEvent-> {
                     System.out.println(login.getText()+" "+password.getText());
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
-                        this.username = login.getText();
-                        try {
-                            newConnection();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+
+                        if()
+                        {
+                            this.username = login.getText();
+                            try {
+                                newConnection();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            // do zmiany
+                            // newGame();
+                            buildScene();
+                            listenForMessage();
                         }
-                        // do zmiany
-                        // newGame();
-                        buildScene();
-                        listenForMessage();
                     }else{
                         Alert a = new Alert(Alert.AlertType.NONE);
                         // set alert type
