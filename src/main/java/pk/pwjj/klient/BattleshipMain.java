@@ -2,6 +2,7 @@ package pk.pwjj.klient;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -184,6 +185,7 @@ public class BattleshipMain extends Application {
         Platform.runLater(()-> {
             try {
                // this.primaryStage = primaryStage;
+                LoginController loginController=new LoginController();
 
                 StackPane root = new StackPane();
 
@@ -198,8 +200,14 @@ public class BattleshipMain extends Application {
                 button.setOnAction(actionEvent-> {
                     System.out.println(login.getText()+" "+password.getText());
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
-
-                        if()
+                        int resp= loginController.login(login.getText(),password.getText());
+                        if(resp==0){
+                            Alert a = new Alert(Alert.AlertType.WARNING);
+                            a.setTitle("Utworzono konto");
+                            a.setHeaderText("Wciśnij ok aby rozpocząć grę");
+                            a.showAndWait();
+                        }
+                        if(resp==1||resp==0)
                         {
                             this.username = login.getText();
                             try {
@@ -207,19 +215,21 @@ public class BattleshipMain extends Application {
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
-                            // do zmiany
-                            // newGame();
                             buildScene();
                             listenForMessage();
                         }
-                    }else{
-                        Alert a = new Alert(Alert.AlertType.NONE);
-                        // set alert type
-                        a.setAlertType(Alert.AlertType.WARNING);
+                        else if(resp==-1){
+                            Alert a = new Alert(Alert.AlertType.ERROR);
+                            a.setHeaderText("Wpisano złe hasło!");
+                            a.setTitle("Odmowa dostępu!");
+                            a.showAndWait();
+                        }
+                    }
+                    else{
+                        Alert a = new Alert(Alert.AlertType.WARNING);
                         a.setHeaderText("Nie uzupełniono wszystkich pól!");
                         a.setTitle("Błąd!");
-                        // show the dialog
-                        a.show();
+                        a.showAndWait();
                     }
                 });
 
