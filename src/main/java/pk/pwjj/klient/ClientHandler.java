@@ -36,7 +36,7 @@ public class ClientHandler implements Runnable{
         ArrayList<ClientHandler> arr = clientMap.get(table);
         if (arr != null) {
             arr.add(this);
-            startsFirst = true;
+//            startsFirst = true;
             System.out.println(arr.size());
             if (arr.size() == 2) {
                 available.put(table, false);
@@ -117,6 +117,10 @@ public class ClientHandler implements Runnable{
 
     public void removeClientHanlder(){
         clientMap.get(table).remove(this);
+        if(clientMap.get(table).size() == 0){
+            System.out.println("Table " + table + " empty");
+            clientMap.put(table, null);
+        }
 //        clientHandlers.remove(this);
         System.out.println("To zapewne tu się wywala");
         broadcastMessage("SERVER: "+clientUsername+" has left");

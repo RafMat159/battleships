@@ -19,6 +19,7 @@ import javafx.scene.control.*;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -41,6 +42,7 @@ public class BattleshipMain extends Application {
     private boolean enemyTurn = false;
 
     private Boolean startNewGame = false;
+    private String winStatus;
 
     private Stage primaryStage;
 
@@ -48,7 +50,6 @@ public class BattleshipMain extends Application {
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
     private String username;
-    private Boolean waitForEnemyMove;
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
     private BorderPane root;
@@ -135,7 +136,8 @@ public class BattleshipMain extends Application {
 
             Board.Cell cell = (Board.Cell) event.getSource();
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
-                endGameScreen();
+//                winStatus = "GAME LOST";
+//                endGameScreen();
                 if (--shipsToPlace == 0) {
                     running = true;
                     send("Your opponent has finished placing ships");
@@ -158,19 +160,16 @@ public class BattleshipMain extends Application {
             this.socket = socket;
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.waitForEnemyMove = false;
             System.out.println("USERNAME: "+this.username);
             send(this.username);
             //readLine - operacja blokująca, zawsze czekać będzie na odpowiedź od serwera
-            if ((bufferedReader.readLine().equals("first"))) {
-                System.out.println("Starts First");
-                enemyTurn = false;
-                this.waitForEnemyMove = false;
-            } else {
-                System.out.println("Starts second");
-                enemyTurn = true;
-                this.waitForEnemyMove = true;
-            }
+//            if ((bufferedReader.readLine().equals("first"))) {
+//                System.out.println("Starts First");
+//                enemyTurn = false;
+//            } else {
+//                System.out.println("Starts second");
+//                enemyTurn = true;
+//            }
         } catch (IOException e) {
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
@@ -242,34 +241,27 @@ public class BattleshipMain extends Application {
         endGameScreen();
         if(choice.equals("yes")) {
             send("new game");
-            Platform.runLater(()->{
-                try {
-                    running = false;
-                    buildScene();
-                } catch (Exception e) {
-                    System.out.println("BŁĄD jakiś");
-                    e.printStackTrace();
-                }
-            });
+            buildScene();
         }
 
     }
 
     public void buildScene(){
-        Scene scene = new Scene(createContent());
-        this.primaryStage.setTitle(username);
-        this.primaryStage.setScene(scene);
-        this.primaryStage.setResizable(false);
-        this.primaryStage.show();
-
+        Platform.runLater(()-> {
+            Scene scene = new Scene(createContent());
+            this.primaryStage.setTitle(username);
+            this.primaryStage.setScene(scene);
+            this.primaryStage.setResizable(false);
+            this.primaryStage.show();
+        });
     }
     @Override
     public void start(Stage primaryStage) throws Exception {
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter your name");
-//        this.username = scanner.nextLine();
-        this.username = "1";
+        this.username = scanner.nextLine();
+//        this.username = "1";
         this.primaryStage = primaryStage;
 
         newConnection();
@@ -312,9 +304,10 @@ public class BattleshipMain extends Application {
             send("hit");
             if (playerBoard.ships == 0) {
                 send("win");
+                winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
                 enemyTurn = true;
-                askForNewGame();
+                endGameScreen();
             }
         } else {
             send("miss");
@@ -327,50 +320,58 @@ public class BattleshipMain extends Application {
 
         Platform.runLater(()-> {
             try {
-                //postion
-                double CENTER_ON_SCREEN_X_FRACTION = 1.0f / 2;
-                double CENTER_ON_SCREEN_Y_FRACTION = 1.0f / 3;
-
-                Screen screen = Screen.getPrimary();
-                Rectangle2D bounds = screen.getVisualBounds();
-              //  System.out.println(bounds.getWidth());
-               // System.out.println(primaryStage.getWidth());
-//                double centerX = bounds.getMinX() +(bounds.getWidth() - root.getWidth())*CENTER_ON_SCREEN_X_FRACTION;// bounds.getMinX() +
-//                double centerY = bounds.getMinY() +(bounds.getHeight() -  root.getHeight())*CENTER_ON_SCREEN_Y_FRACTION;// bounds.getMinY() +
 
                 root.setEffect(new GaussianBlur());
 
                 VBox pauseRoot = new VBox(5);
-                pauseRoot.getChildren().add(new Label("Paused"));
+                pauseRoot.getChildren().add(new Label(winStatus));
+                pauseRoot.getChildren().add(new Label("Play next game or exit"));
                 pauseRoot.setStyle("-fx-background-color: rgba(255, 255, 255, 0.8);");
                 pauseRoot.setAlignment(Pos.CENTER);
                 pauseRoot.setPadding(new Insets(20));
 
-                double centerX = root.getLayoutX();
-                double centerY = root.getLayoutY();
+                HBox buttonRoot = new HBox(20);
+                pauseRoot.setAlignment(Pos.CENTER);
+                pauseRoot.setPrefWidth(180);
+                pauseRoot.setPrefHeight(100);
+                pauseRoot.setPadding(new Insets(20));
+                pauseRoot.getChildren().add(buttonRoot);
 
-//                System.out.println();
+                Button resume = new Button("Play");
+                resume.setMinWidth(60);
 
-                Button resume = new Button("Resume");
-                pauseRoot.getChildren().add(resume);
-                pauseRoot.setLayoutX(centerX);
-                pauseRoot.setLayoutY(centerY);
+                Button end = new Button("Exit");
+                end.setMinWidth(60);
 
+                buttonRoot.getChildren().add(end);
+                buttonRoot.getChildren().add(resume);
                 Stage popupStage = new Stage(StageStyle.TRANSPARENT);
+
                 popupStage.initOwner(primaryStage);
                 popupStage.initModality(Modality.APPLICATION_MODAL);
                 popupStage.setScene(new Scene(pauseRoot, Color.TRANSPARENT));
-                popupStage.setX(primaryStage.getX() + primaryStage.getWidth() / 2 - pauseRoot.getWidth());
-                popupStage.setY(primaryStage.getY() + primaryStage.getHeight() / 2 - pauseRoot.getHeight());
+                System.out.println(pauseRoot.getWidth());
+                popupStage.setX(primaryStage.getX() + (primaryStage.getWidth() / 2) - pauseRoot.getPrefWidth() / 2);
+                popupStage.setY(primaryStage.getY() + (primaryStage.getHeight() / 2) - pauseRoot.getPrefHeight() / 2);
 //                popupStage.getX();
                 resume.setOnAction(event -> {
                     root.setEffect(null);
-                    // animation.play();
                     popupStage.hide();
+                    start = false;
+                    // set to false, so the ships can be placed again
+                    running = false;
+                    // set message to get new table
+                    send("new game");
+                    // build new board
+                    buildScene();
                 });
+
+                end.setOnAction(event -> {
+                    System.exit(0);
+                });
+
                 popupStage.show();
-                System.out.println(popupStage.getX());
-            } catch (Exception e) {
+                } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
@@ -387,8 +388,23 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
-                        if (msgFromGroupChat.equals("Your opponent has finished placing ships"))
-                            start = true;
+                        if(!start) {
+                            switch (msgFromGroupChat) {
+                                case "first":
+                                    System.out.println("Starts First");
+                                    enemyTurn = false;
+                                    break;
+
+                                case "second":
+                                    System.out.println("Starts second");
+                                    enemyTurn = true;
+                                    break;
+
+                                case "Your opponent has finished placing ships":
+                                    start = true;
+                                    break;
+                            }
+                        }
 
                         if (start) {
                             if (msgFromGroupChat.length() == 2) {
@@ -398,6 +414,7 @@ public class BattleshipMain extends Application {
                                     case "end":
                                         enemyTurn = false;
                                         break;
+
                                     case "hit": case "miss":
                                         lock.lock();
                                         try {
@@ -407,13 +424,13 @@ public class BattleshipMain extends Application {
                                             lock.unlock();
                                         }
                                         break;
+
                                     case "win":
-                                        if (msgFromGroupChat.equals("win")) {
-                                            System.out.println("YOU WIN");
-                                            start = false;
-                                            askForNewGame();
-                                            break;
-                                        }
+                                        System.out.println("YOU WIN");
+                                        winStatus = "GAME WON";
+                                        endGameScreen();
+                                        break;
+
                                     default:
                                         System.out.println("COMMAND NOT RECOGNIZED");
                                 }
