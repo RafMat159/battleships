@@ -40,19 +40,19 @@ public class ClientHandler implements Runnable{
             System.out.println(arr.size());
             if (arr.size() == 2) {
                 available.put(table, false);
+                broadcastMessage("first");
+                this.bufferedWriter.write("second");
+                this.bufferedWriter.newLine();
+                this.bufferedWriter.flush();
             }
-            this.bufferedWriter.write("second");
 //            clientMap.put(table, arr);
         }
         else{
             arr = new ArrayList<>();
             arr.add(this);
-            this.bufferedWriter.write("first");
         }
-        this.bufferedWriter.newLine();
-        this.bufferedWriter.flush();
         clientMap.put(table, arr);
-
+        System.out.println("User: "+clientUsername+", dodano do stolu: "+table);
     }
 
     public ClientHandler(Socket socket){
@@ -63,7 +63,6 @@ public class ClientHandler implements Runnable{
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.clientUsername = bufferedReader.readLine();
             this.addToTable();
-            System.out.println("Dodano do stolu: "+table);
             broadcastMessage("SERVER:"+clientUsername+" joined chat");
         } catch (IOException e){
             closeEverything(socket, bufferedReader, bufferedWriter);
@@ -75,7 +74,6 @@ public class ClientHandler implements Runnable{
         System.out.println("Usunięto ze stołu: "+table);
         try{
             this.addToTable();
-            System.out.println("Dodano do stolu: "+table);
         } catch (IOException e){
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
@@ -103,7 +101,7 @@ public class ClientHandler implements Runnable{
         ArrayList<ClientHandler> arr = clientMap.get(table);
         for (ClientHandler clientHandler : arr){
             try {
-                if(!clientHandler.clientUsername.equals((this.clientUsername))){
+                if(arr != null && !clientHandler.clientUsername.equals((this.clientUsername))){
                     clientHandler.bufferedWriter.write(messageToSend);
                     clientHandler.bufferedWriter.newLine();
                     clientHandler.bufferedWriter.flush();
@@ -117,14 +115,16 @@ public class ClientHandler implements Runnable{
 
     public void removeClientHanlder(){
         clientMap.get(table).remove(this);
+        System.out.println("To zapewne tu się wywala");
         if(clientMap.get(table).size() == 0){
             System.out.println("Table " + table + " empty");
             clientMap.put(table, null);
-        }
-//        clientHandlers.remove(this);
-        System.out.println("To zapewne tu się wywala");
-        broadcastMessage("SERVER: "+clientUsername+" has left");
+        } else
+            broadcastMessage("SERVER: "+clientUsername+" has left");
         System.out.println("chyba ta");
+
+        available.put(table, true);
+//        clientHandlers.remove(this);
     }
 
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){

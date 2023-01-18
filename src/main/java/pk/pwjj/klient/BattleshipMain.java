@@ -9,10 +9,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -25,7 +23,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import javafx.stage.StageStyle;
@@ -41,7 +38,7 @@ public class BattleshipMain extends Application {
 
     private boolean enemyTurn = false;
 
-    private Boolean startNewGame = false;
+    private Boolean mayPlaceShips = false;
     private String winStatus;
 
     private Stage primaryStage;
@@ -130,12 +127,14 @@ public class BattleshipMain extends Application {
         });
 
         shipsToPlace = 5;
+        mayPlaceShips = false;
+
         playerBoard = new Board(false, event -> {
             if (running)
                 return;
 
             Board.Cell cell = (Board.Cell) event.getSource();
-            if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
+            if (mayPlaceShips && playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
 //                winStatus = "GAME LOST";
 //                endGameScreen();
                 if (--shipsToPlace == 0) {
@@ -171,7 +170,7 @@ public class BattleshipMain extends Application {
 //                enemyTurn = true;
 //            }
         } catch (IOException e) {
-            closeEverything(socket, bufferedReader, bufferedWriter);
+            closeConnection();
         }
         listenForMessage();
     }
@@ -280,8 +279,20 @@ public class BattleshipMain extends Application {
 
     }
 
+    @Override
+    public void stop(){
+        System.out.println("App exit");
+        closeConnection();
+        System.exit(0);
+//        Platform.exit();
+    }
     public static void main(String[] args) {
         launch();
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                System.out.println("In shutdown hook");
+            }
+        }, "Shutdown-thread"));
     }
 
     private void send(String msg) {
@@ -292,7 +303,7 @@ public class BattleshipMain extends Application {
             bufferedWriter.newLine();
             bufferedWriter.flush();
         } catch (IOException e) {
-            closeEverything(socket, bufferedReader, bufferedWriter);
+            closeConnection();
         }
     }
 
@@ -313,6 +324,18 @@ public class BattleshipMain extends Application {
             send("miss");
             enemyTurn = false;
         }
+    }
+
+    public void restartGame(){
+        System.out.println("Restarting game");
+        // wait to start game
+        start = false;
+        // set to false, so the ships can be placed again
+        running = false;
+        // set message to get new table
+        send("new game");
+        // build new board
+        buildScene();
     }
 
     public void endGameScreen(){
@@ -357,13 +380,7 @@ public class BattleshipMain extends Application {
                 resume.setOnAction(event -> {
                     root.setEffect(null);
                     popupStage.hide();
-                    start = false;
-                    // set to false, so the ships can be placed again
-                    running = false;
-                    // set message to get new table
-                    send("new game");
-                    // build new board
-                    buildScene();
+                    restartGame();
                 });
 
                 end.setOnAction(event -> {
@@ -388,16 +405,23 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
+                        if (msgFromGroupChat.equals("left"))
+                            restartGame();
+
                         if(!start) {
                             switch (msgFromGroupChat) {
                                 case "first":
                                     System.out.println("Starts First");
                                     enemyTurn = false;
+                                    // placing ships blocked until two players at the table
+                                    mayPlaceShips = true;
                                     break;
 
                                 case "second":
                                     System.out.println("Starts second");
                                     enemyTurn = true;
+                                    // placing ships blocked until two players at the table
+                                    mayPlaceShips = true;
                                     break;
 
                                 case "Your opponent has finished placing ships":
@@ -411,6 +435,7 @@ public class BattleshipMain extends Application {
                                 checkHit(msgFromGroupChat);
                             } else{
                                 switch (msgFromGroupChat){
+
                                     case "end":
                                         enemyTurn = false;
                                         break;
@@ -439,20 +464,21 @@ public class BattleshipMain extends Application {
 
                         System.out.println("RECIEVED: " + msgFromGroupChat);
                     } catch (IOException e) {
-                        closeEverything(socket, bufferedReader, bufferedWriter);
+                        closeConnection();
                     }
                 }
             }
         }).start();
     }
 
-    public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
+    public void closeConnection() {
         try {
-            if (bufferedReader != null) {
-                bufferedReader.close();
-            }
+            send("left");
             if (bufferedWriter != null) {
                 bufferedWriter.close();
+            }
+            if (bufferedReader != null) {
+                bufferedReader.close();
             }
             if (socket != null) {
                 socket.close();
