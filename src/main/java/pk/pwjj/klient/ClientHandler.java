@@ -74,7 +74,8 @@ public class ClientHandler implements Runnable{
         clientMap.get(table).remove(this);
         System.out.println("Usunięto ze stołu: "+table);
         try{
-        this.addToTable();
+            this.addToTable();
+            System.out.println("Dodano do stolu: "+table);
         } catch (IOException e){
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
