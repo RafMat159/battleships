@@ -168,6 +168,7 @@ public class BattleshipMain extends Application {
                 this.waitForEnemyMove = false;
             } else {
                 System.out.println("Starts second");
+                send("second");
                 enemyTurn = true;
                 this.waitForEnemyMove = true;
             }
@@ -194,19 +195,20 @@ public class BattleshipMain extends Application {
                 button.setOnAction(actionEvent-> {
                     System.out.println(login.getText()+" "+password.getText());
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
+                        this.username = login.getText();
                         try {
                             newConnection();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                         // do zmiany
-//                        newGame();
+                        // newGame();
+                        buildScene();
                         listenForMessage();
                     }else{
                         Alert a = new Alert(Alert.AlertType.NONE);
                         // set alert type
                         a.setAlertType(Alert.AlertType.WARNING);
-                        //a.setContentText("F");
                         a.setHeaderText("Nie uzupełniono wszystkich pól!");
                         a.setTitle("Błąd!");
                         // show the dialog
@@ -265,26 +267,16 @@ public class BattleshipMain extends Application {
     }
     @Override
     public void start(Stage primaryStage) throws Exception {
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter your name");
-//        this.username = scanner.nextLine();
-        this.username = "1";
         this.primaryStage = primaryStage;
-
-        newConnection();
-        buildScene();
-
-//        Platform.runLater(()->{
-//            try {
-//                init(this.primaryStage);
-//
-//                // startNewGame = false;
-//            } catch (Exception e) {
-//                System.out.println("BŁĄD jakiś");
-//                e.printStackTrace();
-//            }
-//        });
+        Platform.runLater(()->{
+            try {
+                init(this.primaryStage);
+                // startNewGame = false;
+            } catch (Exception e) {
+                System.out.println("BŁĄD jakiś");
+                e.printStackTrace();
+            }
+        });
 
     }
 

@@ -31,7 +31,6 @@ public class ClientHandler implements Runnable{
     }
 
     public void addToTable() throws IOException{
-
         table = getClosestAvailable();
         ArrayList<ClientHandler> arr = clientMap.get(table);
         if (arr != null) {
