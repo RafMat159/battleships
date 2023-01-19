@@ -18,7 +18,7 @@ public class User {
 
     /**
      * Hibernate (JPA) needs it.
-     * */
+     */
     @SuppressWarnings("unused")
     public User() {
     }
@@ -27,6 +27,11 @@ public class User {
         this.username = username;
         this.password = password;
         this.ranking = ranking;
+    }
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)

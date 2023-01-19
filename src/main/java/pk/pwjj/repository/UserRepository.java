@@ -3,6 +3,7 @@ package pk.pwjj.repository;
 import pk.pwjj.HibernateUtil;
 import pk.pwjj.entity.User;
 
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import java.util.Optional;
 
@@ -26,10 +27,16 @@ public class UserRepository {
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
         var trasaction = session.beginTransaction();
 
-        Query query = session.createQuery("SELECT u.username FROM User u WHERE u.username=:username");
-        query.setParameter("username",username);
-        var result = Optional.ofNullable((User)query.getSingleResult());
-
+        Optional<User> result = Optional.empty();
+        try {
+            Query query = session.createQuery("SELECT u FROM User u WHERE u.username=:username");
+            query.setParameter("username", username);
+            result = Optional.ofNullable((User) query.getSingleResult());
+        }catch (NoResultException e){
+            trasaction.commit();
+            session.close();
+            return result;
+        }
         trasaction.commit();
         session.close();
         return result;
@@ -41,12 +48,12 @@ public class UserRepository {
 
         try{
             session.save(user);
-            session.close();
+            trasaction.commit();
         }catch(Exception e){
             e.printStackTrace();
         }
         finally {
-            trasaction.commit();
+            session.close();
         }
     }
 
