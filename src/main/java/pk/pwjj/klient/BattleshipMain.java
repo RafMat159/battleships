@@ -1,13 +1,5 @@
 package pk.pwjj.klient;
 
-import java.io.*;
-import java.net.Socket;
-import java.util.Optional;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -25,37 +17,40 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-
 import javafx.stage.StageStyle;
 import pk.pwjj.controller.GameController;
 import pk.pwjj.controller.LoginController;
 import pk.pwjj.klient.Board.Cell;
 
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.net.Socket;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class BattleshipMain extends Application {
 
     private boolean running = false;
     private boolean start = false;
-    private Board enemyBoard, playerBoard;
-
-    private int shipsToPlace = 5;
-
     private boolean enemyTurn = false;
-
     private Boolean mayPlaceShips = false;
     private String winStatus = null;
+    private Board enemyBoard, playerBoard;
+    private int shipsToPlace = 5;
+
 
     private Stage primaryStage;
-
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
     private String username;
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
-    private Thread listenerThread;
     private BorderPane root;
-    private int width = 600;
-    private int height = 800;
+    private final int width = 600;
+    private final int height = 800;
 
     private Parent createContent() {
         root = new BorderPane();
@@ -83,16 +78,16 @@ public class BattleshipMain extends Application {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    //czeka na odpowiedź
-//                    boolean respRead = false;
-//                    while (!respRead) {
+
                     try {
                         TimeUnit.MILLISECONDS.sleep(100);
                     } catch (InterruptedException e) {
                         return;
                     }
+
                     lock.lock();
                     String resp;
+
                     try {
                         resp = globalMessage;
                         System.out.println("Taki event dostaje response jak odczyta po blokadzie: " + resp);
@@ -107,7 +102,6 @@ public class BattleshipMain extends Application {
                             enemyTurn = false;
                             cell.setFill(Color.RED);
                             cell.setDisable(true);
-                            //tutaj zamalować odpowiedni kafelek
                         }
 
                         globalMessage = null;
@@ -124,7 +118,7 @@ public class BattleshipMain extends Application {
                         System.out.println("CATCH");
                     }
 
-//                    }
+
                 }
             }).start();
 
@@ -137,9 +131,7 @@ public class BattleshipMain extends Application {
                 return;
 
             Board.Cell cell = (Board.Cell) event.getSource();
-            if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
-                //                winStatus = "GAME LOST";
-                //endGameScreen();
+            if (mayPlaceShips && playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
                 if (--shipsToPlace == 0) {
                     running = true;
                     send("Your opponent has finished placing ships");
@@ -155,30 +147,24 @@ public class BattleshipMain extends Application {
         return root;
     }
 
-    public void newConnection() throws Exception{
+    public void newConnection() throws Exception {
         Socket socket = new Socket("localhost", 1234);
 
         try {
             this.socket = socket;
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            System.out.println("USERNAME: "+this.username);
+            System.out.println("USERNAME: " + this.username);
             send(this.username);
-            //readLine - operacja blokująca, zawsze czekać będzie na odpowiedź od serwera
-//            if ((bufferedReader.readLine().equals("first"))) {
-//                System.out.println("Starts First");
-//                enemyTurn = false;
-//            } else {
-//                System.out.println("Starts second");
-//                enemyTurn = true;
-//            }
         } catch (IOException e) {
             closeConnection();
         }
         listenForMessage();
+        chatWriter();
     }
+
     public void init(Stage stage) {
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             try {
                 StackPane root = new StackPane();
 
@@ -187,41 +173,52 @@ public class BattleshipMain extends Application {
                 vBox.setSpacing(8);
                 vBox.setPadding(new Insets(10, 10, 10, 10));
 
-                TextField login= new TextField();
-                PasswordField password=new PasswordField();
-                Button button=new Button("LOGIN");
-                button.setOnAction(actionEvent-> {
-                    System.out.println(login.getText()+" "+password.getText());
-                    if(login.getText().length()!=0&&password.getText().length()!=0) {
-                        int resp= LoginController.getInstance().login(login.getText(),password.getText());
-                        if(resp==0){
-                            Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
-                            a.setTitle("Utworzono konto");
-                            a.showAndWait();
+                TextField login = new TextField();
+                PasswordField password = new PasswordField();
+                Button button = new Button("LOGIN");
+
+                button.setOnAction(actionEvent -> {
+                    System.out.println(login.getText() + " " + password.getText());
+                    if (login.getText().length() != 0 && password.getText().length() != 0) {
+
+                        int resp = LoginController.getInstance().login(login.getText(), password.getText());
+                        Alert a;
+
+                        switch (resp) {
+
+                            case 0:
+                                a = new Alert(Alert.AlertType.NONE, "Wciśnij ok aby rozpocząć grę", ButtonType.OK);
+                                a.setTitle("Utworzono konto");
+                                a.showAndWait();
+
+                            case 1:
+                                this.username = login.getText();
+
+                                try {
+                                    newConnection();
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                                buildScene();
+//                                to je chyba niepotrzebne
+//                                listenForMessage();
+                                break;
+
+                            case -1:
+                                a = new Alert(Alert.AlertType.ERROR);
+                                a.setHeaderText("Wpisano złe hasło!");
+                                a.setTitle("Odmowa dostępu!");
+                                a.showAndWait();
+                                break;
+
+                            default:
+                                a = new Alert(Alert.AlertType.WARNING);
+                                a.setHeaderText("Nie uzupełniono wszystkich pól!");
+                                a.setTitle("Błąd!");
+                                a.showAndWait();
+                                break;
                         }
-                        if(resp==1||resp==0)
-                        {
-                            this.username = login.getText();
-                            try {
-                                newConnection();
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                            buildScene();
-                            listenForMessage();
-                        }
-                        else if(resp==-1){
-                            Alert a = new Alert(Alert.AlertType.ERROR);
-                            a.setHeaderText("Wpisano złe hasło!");
-                            a.setTitle("Odmowa dostępu!");
-                            a.showAndWait();
-                        }
-                    }
-                    else{
-                        Alert a = new Alert(Alert.AlertType.WARNING);
-                        a.setHeaderText("Nie uzupełniono wszystkich pól!");
-                        a.setTitle("Błąd!");
-                        a.showAndWait();
                     }
                 });
 
@@ -244,22 +241,8 @@ public class BattleshipMain extends Application {
         });
     }
 
-    public void askForNewGame(){
-
-        System.out.println("START NEW GAME?");
-        Scanner scanner = new Scanner(System.in);
-        String choice = scanner.next();
-        System.out.println(choice);
-        endGameScreen();
-        if(choice.equals("yes")) {
-            send("new game");
-            buildScene();
-        }
-
-    }
-
-    public void buildScene(){
-        Platform.runLater(()-> {
+    public void buildScene() {
+        Platform.runLater(() -> {
             Scene scene = new Scene(createContent());
             this.primaryStage.setTitle(username);
             this.primaryStage.setScene(scene);
@@ -267,13 +250,13 @@ public class BattleshipMain extends Application {
             this.primaryStage.show();
         });
     }
+
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage){
         this.primaryStage = primaryStage;
-        Platform.runLater(()->{
+        Platform.runLater(() -> {
             try {
                 init(this.primaryStage);
-                // startNewGame = false;
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
@@ -283,13 +266,13 @@ public class BattleshipMain extends Application {
     }
 
     @Override
-    public void stop(){
+    public void stop() {
         System.out.println("App exit");
         send("end game");
         closeConnection();
         System.exit(0);
-//        Platform.exit();
     }
+
     public static void main(String[] args) {
         launch();
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -308,6 +291,7 @@ public class BattleshipMain extends Application {
             bufferedWriter.flush();
         } catch (IOException e) {
             closeConnection();
+        } catch (NullPointerException e){
         }
     }
 
@@ -316,25 +300,27 @@ public class BattleshipMain extends Application {
         Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
         System.out.println("Sprawdz pole: " + cell.x + cell.y);
         if (cell.shoot()) {
+
             send("hit");
             if (playerBoard.ships == 0) {
-               GameController.getInstance().updateRanking(this.username,"lose");
+                GameController.getInstance().updateRanking(this.username, "lose");
                 send("win");
                 winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
                 enemyTurn = true;
                 endGameScreen();
             }
+
         } else {
             send("miss");
             enemyTurn = false;
         }
     }
 
-    public void restartGame(){
+    public void restartGame() {
         System.out.println("Restarting game");
 
-        // game is neither won or lost at this stage
+        // game is neither won nor lost at this stage
         winStatus = null;
         // block placing ships until new player arrives
         mayPlaceShips = false;
@@ -348,10 +334,10 @@ public class BattleshipMain extends Application {
         buildScene();
     }
 
-    public void endGameScreen(){
+    public void endGameScreen() {
         //enemyTurn = true;
 
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             try {
 
                 root.setEffect(new GaussianBlur());
@@ -386,7 +372,7 @@ public class BattleshipMain extends Application {
                 System.out.println(pauseRoot.getWidth());
                 popupStage.setX(primaryStage.getX() + (primaryStage.getWidth() / 2) - pauseRoot.getPrefWidth() / 2);
                 popupStage.setY(primaryStage.getY() + (primaryStage.getHeight() / 2) - pauseRoot.getPrefHeight() / 2);
-//                popupStage.getX();
+
                 resume.setOnAction(event -> {
                     root.setEffect(null);
                     popupStage.hide();
@@ -394,20 +380,34 @@ public class BattleshipMain extends Application {
                 });
 
                 end.setOnAction(event -> {
-//                    System.exit(0);
-                    // chyba to powinno być żeby stop triggerować
                     Platform.exit();
                 });
 
                 popupStage.show();
-                } catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
     }
-    public void listenForMessage(){
-        listenerThread = new Thread(new Runnable() {
+
+    // send chat message with specific prefix
+    public void chatWriter(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String chatMsgToSend;
+                Scanner scanner = new Scanner(System.in);
+                while (socket.isConnected()){
+                    chatMsgToSend = scanner.nextLine();
+                    send("communication:"+chatMsgToSend);
+                }
+            }
+        }).start();
+    }
+
+    public void listenForMessage() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 String msgFromGroupChat;
@@ -417,16 +417,14 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
-                        // tu wpada w pętlę po naciśnięciu new game przez jednego z graczy
-                        // wysyłany jest komunikat left, dla tamtego usera jest tworzony nowy pokój i od razu dla tego
-                        // pasuje jakoś rozrózniać te komunikaty
                         // if someone left, and the game has no result (someone left during game) and was started then restart game
                         if (msgFromGroupChat == null || (msgFromGroupChat.equals("left") && winStatus == null && start)) {
                             restartGame();
                             continue;
                         }
 
-                        if(!start) {
+                        // messages to check before game starts
+                        if (!start) {
                             switch (msgFromGroupChat) {
                                 case "first":
                                     System.out.println("Starts First");
@@ -448,17 +446,22 @@ public class BattleshipMain extends Application {
                             }
                         }
 
+                        // messages to check when game is running
                         if (start) {
-                            if (msgFromGroupChat.length() == 2) {
+
+                            if (msgFromGroupChat.length() == 2) {                                   // board coordinates
                                 checkHit(msgFromGroupChat);
-                            } else{
-                                switch (msgFromGroupChat){
+                            } else if (msgFromGroupChat.startsWith("communication:")) {             // chat
+                                System.out.println(msgFromGroupChat.substring(14));
+                            } else {                                                                // commands
+                                switch (msgFromGroupChat) {
 
                                     case "end":
                                         enemyTurn = false;
                                         break;
 
-                                    case "hit": case "miss":
+                                    case "hit":
+                                    case "miss":
                                         lock.lock();
                                         try {
                                             globalMessage = msgFromGroupChat;
@@ -469,7 +472,7 @@ public class BattleshipMain extends Application {
                                         break;
 
                                     case "win":
-                                        GameController.getInstance().updateRanking(username,"win");
+                                        GameController.getInstance().updateRanking(username, "win");
                                         System.out.println("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
@@ -480,15 +483,12 @@ public class BattleshipMain extends Application {
                                 }
                             }
                         }
-
-                        System.out.println("RECIEVED: " + msgFromGroupChat);
                     } catch (IOException e) {
                         closeConnection();
                     }
                 }
             }
-        });
-        listenerThread.start();
+        }).start();
     }
 
     public void closeConnection() {

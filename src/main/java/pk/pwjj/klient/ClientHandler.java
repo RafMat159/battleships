@@ -83,12 +83,22 @@ public class ClientHandler implements Runnable{
             try{
                 messageFromClient = bufferedReader.readLine();
                 System.out.println("User: "+clientUsername+": "+messageFromClient);
-                if(messageFromClient.equals("new game")){
-                    this.newGame();
-                } else if(messageFromClient.equals("end game")){
-                    closeEverything(socket, bufferedReader, bufferedWriter);
-                }else {
-                    broadcastMessage(messageFromClient);
+
+                if(messageFromClient.startsWith("communication:")){                                         // chat communication
+                    String strippedMessage = messageFromClient.substring(14);
+                    broadcastMessage("communication:"+clientUsername+": "+strippedMessage);
+                }
+                else {
+                    switch (messageFromClient) {                                                            // commands
+                        case "new game":
+                            this.newGame();
+                            break;
+                        case "end game":
+                            closeEverything(socket, bufferedReader, bufferedWriter);
+                            break;
+                        default:
+                            broadcastMessage(messageFromClient);
+                    }
                 }
             } catch (Exception e){
                 closeEverything(socket,  bufferedReader, bufferedWriter);
