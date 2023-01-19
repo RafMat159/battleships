@@ -8,11 +8,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
@@ -42,6 +40,8 @@ public class BattleshipMain extends Application {
 
 
     private Stage primaryStage;
+
+    TextArea displayAllMessages = new TextArea();;
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
@@ -49,14 +49,12 @@ public class BattleshipMain extends Application {
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
     private BorderPane root;
-    private final int width = 600;
+    private final int width = 800;
     private final int height = 800;
 
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
-
-        root.setRight(new Text("RIGHT SIDEBAR - CONTROLS"));
 
         enemyBoard = new Board(true, event -> {
             if (!running || enemyTurn)
@@ -142,9 +140,78 @@ public class BattleshipMain extends Application {
         VBox vbox = new VBox(50, enemyBoard, playerBoard);
         vbox.setAlignment(Pos.CENTER);
 
-        root.setCenter(vbox);
+        GridPane chatPane = createChat();
+
+        HBox hbox = new HBox(50, vbox, chatPane);
+        hbox.setPadding(new Insets(50));
+
+        root.setCenter(hbox);
 
         return root;
+    }
+
+    public void addMessage(String msg) {
+        displayAllMessages.appendText(msg);
+    }
+
+    public GridPane createChat() {
+
+        TextField enterMessageField = new TextField();
+        enterMessageField.setEditable(true);
+        enterMessageField.setMinWidth(350);
+
+        displayAllMessages.setPrefHeight(800);
+        displayAllMessages.setEditable(false);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(displayAllMessages);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        displayAllMessages.setMinWidth(400);
+
+        Button button = new Button("Send");
+        button.setMinWidth(50);
+        button.setDefaultButton(true);
+
+//        VBox vBoxChat = new VBox(enterMessageField);
+//        vBoxChat.setPadding(new Insets(10, 10, 10, 10));
+
+        VBox vBoxChatIncoming = new VBox(displayAllMessages);
+        vBoxChatIncoming.setPadding(new Insets(10, 10, 10, 10));
+
+        HBox hBoxSend = new HBox(10, enterMessageField, button);
+        hBoxSend.setPadding(new Insets(10, 10, 10, 10));
+
+        GridPane rootPane = new GridPane();
+        rootPane.add(vBoxChatIncoming, 0, 0);
+        rootPane.add(hBoxSend, 0, 1);
+//        rootPane.add(vBoxEnter, 1, 1);
+
+//        Scene scene = new Scene(rootPane, 800, 700, Color.WHITE);
+//        stage.setScene(scene);
+//        stage.setTitle("Chat");
+//        stage.show();
+
+
+        enterMessageField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                String s = enterMessageField.getText() + "\n";
+                enterMessageField.setText("");
+                if (!s.isBlank()) {
+                    send("communication:" +s);
+                    addMessage(username+": "+s);
+                }
+            }
+        });
+
+        button.setOnAction((event) -> {
+            String s = enterMessageField.getText() + "\n";
+            enterMessageField.setText("");
+            if (!s.isBlank()) {
+                send("communication:" +s);
+                addMessage(username+": "+s);
+            }
+        });
+
+        return rootPane;
     }
 
     public void newConnection() throws Exception {
@@ -251,9 +318,11 @@ public class BattleshipMain extends Application {
         });
     }
 
+
     @Override
-    public void start(Stage primaryStage){
+    public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
+
         Platform.runLater(() -> {
             try {
                 init(this.primaryStage);
@@ -264,6 +333,7 @@ public class BattleshipMain extends Application {
         });
 
     }
+
 
     @Override
     public void stop() {
@@ -291,7 +361,7 @@ public class BattleshipMain extends Application {
             bufferedWriter.flush();
         } catch (IOException e) {
             closeConnection();
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
         }
     }
 
@@ -392,15 +462,15 @@ public class BattleshipMain extends Application {
     }
 
     // send chat message with specific prefix
-    public void chatWriter(){
+    public void chatWriter() {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 String chatMsgToSend;
                 Scanner scanner = new Scanner(System.in);
-                while (socket.isConnected()){
+                while (socket.isConnected()) {
                     chatMsgToSend = scanner.nextLine();
-                    send("communication:"+chatMsgToSend);
+                    send("communication:" + chatMsgToSend);
                 }
             }
         }).start();
@@ -417,9 +487,21 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
+                        // enemy left before game start
+                        if (msgFromGroupChat.equals("left") && !(winStatus == null && start))
+                            addMessage("Your enemy left - waiting for another to join\n");
+
                         // if someone left, and the game has no result (someone left during game) and was started then restart game
                         if (msgFromGroupChat == null || (msgFromGroupChat.equals("left") && winStatus == null && start)) {
+                            addMessage("Your enemy left - restarting table\n");
                             restartGame();
+                            continue;
+                        }
+
+                        // chat communication
+                        if (msgFromGroupChat.startsWith("communication:")) {
+                            addMessage(msgFromGroupChat.substring(14)+"\n");
+                            System.out.println(msgFromGroupChat.substring(14));
                             continue;
                         }
 
@@ -427,20 +509,23 @@ public class BattleshipMain extends Application {
                         if (!start) {
                             switch (msgFromGroupChat) {
                                 case "first":
-                                    System.out.println("Starts First");
+                                    addMessage("New Game Started\n");
+                                    addMessage("You Start First\nWaiting for enemy to place ships...\n");
                                     enemyTurn = false;
                                     // placing ships blocked until two players at the table
                                     mayPlaceShips = true;
                                     break;
 
                                 case "second":
-                                    System.out.println("Starts second");
+                                    addMessage("New Game Started\n");
+                                    addMessage("You Start Second\nWaiting for enemy to place ships...\n");
                                     enemyTurn = true;
                                     // placing ships blocked until two players at the table
                                     mayPlaceShips = true;
                                     break;
 
                                 case "Your opponent has finished placing ships":
+                                    addMessage("Your opponent has finished placing ships - Good Luck\n");
                                     start = true;
                                     break;
                             }
@@ -451,8 +536,6 @@ public class BattleshipMain extends Application {
 
                             if (msgFromGroupChat.length() == 2) {                                   // board coordinates
                                 checkHit(msgFromGroupChat);
-                            } else if (msgFromGroupChat.startsWith("communication:")) {             // chat
-                                System.out.println(msgFromGroupChat.substring(14));
                             } else {                                                                // commands
                                 switch (msgFromGroupChat) {
 
@@ -473,7 +556,7 @@ public class BattleshipMain extends Application {
 
                                     case "win":
                                         GameController.getInstance().updateRanking(username, "win");
-                                        System.out.println("YOU WIN");
+                                        addMessage("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
                                         break;
