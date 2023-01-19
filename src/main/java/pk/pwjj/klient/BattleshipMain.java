@@ -27,6 +27,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import javafx.stage.StageStyle;
+import pk.pwjj.controller.GameController;
 import pk.pwjj.controller.LoginController;
 import pk.pwjj.klient.Board.Cell;
 
@@ -55,9 +56,7 @@ public class BattleshipMain extends Application {
     private BorderPane root;
     private int width = 600;
     private int height = 800;
-
-    LoginController loginController = new LoginController();
-
+    private GameController gameController=new GameController();
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
@@ -140,7 +139,7 @@ public class BattleshipMain extends Application {
             Board.Cell cell = (Board.Cell) event.getSource();
             if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
                 //                winStatus = "GAME LOST";
-                endGameScreen();
+                //endGameScreen();
                 if (--shipsToPlace == 0) {
                     running = true;
                     send("Your opponent has finished placing ships");
@@ -321,6 +320,7 @@ public class BattleshipMain extends Application {
         if (cell.shoot()) {
             send("hit");
             if (playerBoard.ships == 0) {
+               gameController.updateRanking(this.username,"lose");
                 send("win");
                 winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
@@ -467,6 +467,7 @@ public class BattleshipMain extends Application {
                                         break;
 
                                     case "win":
+                                        gameController.updateRanking(username,"win");
                                         System.out.println("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
