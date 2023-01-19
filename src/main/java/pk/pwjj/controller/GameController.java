@@ -4,6 +4,7 @@ import pk.pwjj.entity.Ranking;
 import pk.pwjj.entity.User;
 import pk.pwjj.repository.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public class GameController {
@@ -35,6 +36,10 @@ public class GameController {
             return 0;
         }
         return -1;
+    }
+
+    public List<User> findTopTenPlayers(){
+        return UserRepository.getInstance().findTopTenPlayers();
     }
 
 }
