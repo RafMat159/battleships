@@ -1,6 +1,7 @@
 package pk.pwjj.repository;
 
 import pk.pwjj.HibernateUtil;
+import pk.pwjj.entity.Ranking;
 import pk.pwjj.entity.User;
 
 import javax.persistence.NoResultException;
@@ -58,6 +59,19 @@ public class UserRepository {
     }
 
 
+    public void updateRanking(Ranking ranking){
+        var session = HibernateUtil.getSessionFactory().getCurrentSession();
+        var trasaction = session.beginTransaction();
+
+        try{
+            session.update(ranking);
+            trasaction.commit();
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            session.close();
+        }
+    }
 
 
 
