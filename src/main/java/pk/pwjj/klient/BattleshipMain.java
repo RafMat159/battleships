@@ -199,9 +199,8 @@ public class BattleshipMain extends Application {
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
                         int resp= loginController.login(login.getText(),password.getText());
                         if(resp==0){
-                            Alert a = new Alert(Alert.AlertType.WARNING);
+                            Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
                             a.setTitle("Utworzono konto");
-                            a.setHeaderText("Wciśnij ok aby rozpocząć grę");
                             a.showAndWait();
                         }
                         if(resp==1||resp==0)
