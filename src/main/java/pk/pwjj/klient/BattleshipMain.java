@@ -2,6 +2,7 @@ package pk.pwjj.klient;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -26,6 +27,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import javafx.stage.StageStyle;
+import pk.pwjj.controller.GameController;
+import pk.pwjj.controller.LoginController;
 import pk.pwjj.klient.Board.Cell;
 
 public class BattleshipMain extends Application {
@@ -53,7 +56,7 @@ public class BattleshipMain extends Application {
     private BorderPane root;
     private int width = 600;
     private int height = 800;
-
+    private GameController gameController=new GameController();
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
@@ -134,9 +137,9 @@ public class BattleshipMain extends Application {
                 return;
 
             Board.Cell cell = (Board.Cell) event.getSource();
-            if (mayPlaceShips && playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
-//                winStatus = "GAME LOST";
-//                endGameScreen();
+            if (playerBoard.placeShip(new Ship(shipsToPlace, event.getButton() == MouseButton.PRIMARY), cell.x, cell.y)) {
+                //                winStatus = "GAME LOST";
+                //endGameScreen();
                 if (--shipsToPlace == 0) {
                     running = true;
                     send("Your opponent has finished placing ships");
@@ -178,6 +181,7 @@ public class BattleshipMain extends Application {
         Platform.runLater(()-> {
             try {
                // this.primaryStage = primaryStage;
+                LoginController loginController=new LoginController();
 
                 StackPane root = new StackPane();
 
@@ -192,23 +196,35 @@ public class BattleshipMain extends Application {
                 button.setOnAction(actionEvent-> {
                     System.out.println(login.getText()+" "+password.getText());
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
-                        try {
-                            newConnection();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                        int resp= loginController.login(login.getText(),password.getText());
+                        if(resp==0){
+                            Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
+                            a.setTitle("Utworzono konto");
+                            a.showAndWait();
                         }
-                        // do zmiany
-//                        newGame();
-                        listenForMessage();
-                    }else{
-                        Alert a = new Alert(Alert.AlertType.NONE);
-                        // set alert type
-                        a.setAlertType(Alert.AlertType.WARNING);
-                        //a.setContentText("F");
+                        if(resp==1||resp==0)
+                        {
+                            this.username = login.getText();
+                            try {
+                                newConnection();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            buildScene();
+                            listenForMessage();
+                        }
+                        else if(resp==-1){
+                            Alert a = new Alert(Alert.AlertType.ERROR);
+                            a.setHeaderText("Wpisano złe hasło!");
+                            a.setTitle("Odmowa dostępu!");
+                            a.showAndWait();
+                        }
+                    }
+                    else{
+                        Alert a = new Alert(Alert.AlertType.WARNING);
                         a.setHeaderText("Nie uzupełniono wszystkich pól!");
                         a.setTitle("Błąd!");
-                        // show the dialog
-                        a.show();
+                        a.showAndWait();
                     }
                 });
 
@@ -256,26 +272,16 @@ public class BattleshipMain extends Application {
     }
     @Override
     public void start(Stage primaryStage) throws Exception {
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter your name");
-        this.username = scanner.nextLine();
-//        this.username = "1";
         this.primaryStage = primaryStage;
-
-        newConnection();
-        buildScene();
-
-//        Platform.runLater(()->{
-//            try {
-//                init(this.primaryStage);
-//
-//                // startNewGame = false;
-//            } catch (Exception e) {
-//                System.out.println("BŁĄD jakiś");
-//                e.printStackTrace();
-//            }
-//        });
+        Platform.runLater(()->{
+            try {
+                init(this.primaryStage);
+                // startNewGame = false;
+            } catch (Exception e) {
+                System.out.println("BŁĄD jakiś");
+                e.printStackTrace();
+            }
+        });
 
     }
 
@@ -315,6 +321,7 @@ public class BattleshipMain extends Application {
         if (cell.shoot()) {
             send("hit");
             if (playerBoard.ships == 0) {
+               gameController.updateRanking(this.username,"lose");
                 send("win");
                 winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
@@ -465,6 +472,7 @@ public class BattleshipMain extends Application {
                                         break;
 
                                     case "win":
+                                        gameController.updateRanking(username,"win");
                                         System.out.println("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
