@@ -39,7 +39,7 @@ public class BattleshipMain extends Application {
     private boolean enemyTurn = false;
 
     private Boolean mayPlaceShips = false;
-    private String winStatus;
+    private String winStatus = null;
 
     private Stage primaryStage;
 
@@ -282,6 +282,7 @@ public class BattleshipMain extends Application {
     @Override
     public void stop(){
         System.out.println("App exit");
+        send("end game");
         closeConnection();
         System.exit(0);
 //        Platform.exit();
@@ -328,6 +329,10 @@ public class BattleshipMain extends Application {
 
     public void restartGame(){
         System.out.println("Restarting game");
+
+        // game is neither won or lost at this stage
+        winStatus = null;
+        // block placing ships until new player arrives
         mayPlaceShips = false;
         // wait to start game
         start = false;
@@ -342,7 +347,6 @@ public class BattleshipMain extends Application {
     public void endGameScreen(){
         //enemyTurn = true;
 
-        send("end game");
         Platform.runLater(()-> {
             try {
 
@@ -412,7 +416,8 @@ public class BattleshipMain extends Application {
                         // tu wpada w pętlę po naciśnięciu new game przez jednego z graczy
                         // wysyłany jest komunikat left, dla tamtego usera jest tworzony nowy pokój i od razu dla tego
                         // pasuje jakoś rozrózniać te komunikaty
-                        if (msgFromGroupChat == null || msgFromGroupChat.equals("left")) {
+                        // if someone left, and the game has no result (someone left during game) and was started then restart game
+                        if (msgFromGroupChat == null || (msgFromGroupChat.equals("left") && winStatus == null && start)) {
                             restartGame();
                             continue;
                         }

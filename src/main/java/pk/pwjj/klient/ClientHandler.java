@@ -87,7 +87,7 @@ public class ClientHandler implements Runnable{
                 if(messageFromClient.equals("new game")){
                     this.newGame();
                 } else if(messageFromClient.equals("end game")){
-                    this.removeFromTable();
+                    closeEverything(socket, bufferedReader, bufferedWriter);
                 }else {
                     broadcastMessage(messageFromClient);
                 }
@@ -115,21 +115,27 @@ public class ClientHandler implements Runnable{
     }
 
     public void removeFromTable(){
-        clientMap.get(table).remove(this);
-        System.out.println("User: "+clientUsername+", usunięto ze stołu: "+table);
-        if(clientMap.get(table).size() == 0){
-            System.out.println("Table " + table + " empty");
-            clientMap.put(table, null);
-        } else
-            broadcastMessage("left");
-//        System.out.println("SERVER: "+clientUsername+" has left");
-
-        available.put(table, true);
-//        clientHandlers.remove(this);
+        try {
+            var removingSuccessfull = clientMap.get(table).remove(this);
+            if (removingSuccessfull) {
+                System.out.println("User: " + clientUsername + ", usunięto ze stołu: " + table);
+                if (clientMap.get(table).size() == 0) {
+                    System.out.println("Table " + table + " empty");
+                    clientMap.put(table, null);
+                } else
+                    broadcastMessage("left");
+                available.put(table, true);
+                table = 0;
+            }
+        } catch (NullPointerException e){
+            System.out.println("Table "+table+" already empty");
+        }
     }
 
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
-        removeFromTable();
+        if (table != 0)
+            removeFromTable();
+
         try{
             if(bufferedReader !=null){
                 bufferedReader.close();
