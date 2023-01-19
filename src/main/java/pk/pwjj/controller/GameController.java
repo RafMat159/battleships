@@ -8,6 +8,17 @@ import java.util.Optional;
 
 public class GameController {
 
+    private static GameController gameController;
+
+    private GameController(){
+    }
+
+    public static GameController getInstance(){
+        if(gameController == null)
+            gameController = new GameController();
+        return gameController;
+    }
+
     public Integer updateRanking(String username, String message) {
         Optional<User> userOptional = UserRepository.getInstance().findUserByUsername(username);
 
