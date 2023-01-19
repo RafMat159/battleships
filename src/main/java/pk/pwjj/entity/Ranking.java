@@ -34,7 +34,7 @@ public class Ranking {
         this.gameWin = gameWin;
     }
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
     private User user;
