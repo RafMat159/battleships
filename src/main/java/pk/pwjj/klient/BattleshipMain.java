@@ -56,7 +56,7 @@ public class BattleshipMain extends Application {
     private BorderPane root;
     private int width = 600;
     private int height = 800;
-    private GameController gameController=new GameController();
+
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
@@ -180,9 +180,6 @@ public class BattleshipMain extends Application {
     public void init(Stage stage) {
         Platform.runLater(()-> {
             try {
-               // this.primaryStage = primaryStage;
-                LoginController loginController=new LoginController();
-
                 StackPane root = new StackPane();
 
                 VBox vBox = new VBox();
@@ -196,7 +193,7 @@ public class BattleshipMain extends Application {
                 button.setOnAction(actionEvent-> {
                     System.out.println(login.getText()+" "+password.getText());
                     if(login.getText().length()!=0&&password.getText().length()!=0) {
-                        int resp= loginController.login(login.getText(),password.getText());
+                        int resp= LoginController.getInstance().login(login.getText(),password.getText());
                         if(resp==0){
                             Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
                             a.setTitle("Utworzono konto");
@@ -321,7 +318,7 @@ public class BattleshipMain extends Application {
         if (cell.shoot()) {
             send("hit");
             if (playerBoard.ships == 0) {
-               gameController.updateRanking(this.username,"lose");
+               GameController.getInstance().updateRanking(this.username,"lose");
                 send("win");
                 winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
@@ -472,7 +469,7 @@ public class BattleshipMain extends Application {
                                         break;
 
                                     case "win":
-                                        gameController.updateRanking(username,"win");
+                                        GameController.getInstance().updateRanking(username,"win");
                                         System.out.println("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
