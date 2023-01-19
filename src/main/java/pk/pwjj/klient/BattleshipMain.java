@@ -18,6 +18,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import pk.pwjj.HibernateUtil;
 import pk.pwjj.controller.GameController;
 import pk.pwjj.controller.LoginController;
 import pk.pwjj.klient.Board.Cell;
@@ -256,6 +257,7 @@ public class BattleshipMain extends Application {
         this.primaryStage = primaryStage;
         Platform.runLater(() -> {
             try {
+                HibernateUtil.getSessionFactory().openSession();
                 init(this.primaryStage);
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
@@ -269,6 +271,7 @@ public class BattleshipMain extends Application {
     public void stop() {
         System.out.println("App exit");
         send("end game");
+        HibernateUtil.getSessionFactory().close();
         closeConnection();
         System.exit(0);
     }
