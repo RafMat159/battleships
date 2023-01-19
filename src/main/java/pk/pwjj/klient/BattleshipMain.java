@@ -19,11 +19,13 @@ import javafx.stage.StageStyle;
 import pk.pwjj.HibernateUtil;
 import pk.pwjj.controller.GameController;
 import pk.pwjj.controller.LoginController;
+import pk.pwjj.entity.User;
 import pk.pwjj.klient.Board.Cell;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -161,70 +163,90 @@ public class BattleshipMain extends Application {
         listenForMessage();
         chatWriter();
     }
+    public void loginScreen(Stage stage){
+        Platform.runLater(() -> {
+            try {
+                StackPane root = new StackPane();
 
+                VBox vBox = new VBox();
+
+                vBox.setSpacing(8);
+                vBox.setPadding(new Insets(10, 10, 10, 10));
+
+                TextField login = new TextField();
+                PasswordField password = new PasswordField();
+                Button button = new Button("LOGIN");
+
+                button.setOnAction(actionEvent -> {
+                    System.out.println(login.getText() + " " + password.getText());
+                    if (login.getText().length() != 0 && password.getText().length() != 0) {
+
+                        int resp = LoginController.getInstance().login(login.getText(), password.getText());
+                        Alert a;
+
+                        switch (resp) {
+
+                            case 0:
+                                a = new Alert(Alert.AlertType.NONE, "Wciśnij ok aby rozpocząć grę", ButtonType.OK);
+                                a.setTitle("Utworzono konto");
+                                a.showAndWait();
+
+                            case 1:
+                                this.username = login.getText();
+
+                                try {
+                                    newConnection();
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                                buildScene();
+//                                to je chyba niepotrzebne
+//                                listenForMessage();
+                                break;
+
+                            case -1:
+                                a = new Alert(Alert.AlertType.ERROR);
+                                a.setHeaderText("Wpisano złe hasło!");
+                                a.setTitle("Odmowa dostępu!");
+                                a.showAndWait();
+                                break;
+
+                            default:
+                                a = new Alert(Alert.AlertType.WARNING);
+                                a.setHeaderText("Nie uzupełniono wszystkich pól!");
+                                a.setTitle("Błąd!");
+                                a.showAndWait();
+                                break;
+                        }
+                    }
+                });
+
+                vBox.getChildren().addAll(
+                        new Label("Your Username"),
+                        login,
+                        new Label("Your Password"),
+                        password,
+                        button);
+                root.getChildren().addAll(vBox);
+
+                Scene scene = new Scene(root, 400, 600);
+
+                stage.setScene(scene);
+                stage.show();
+            } catch (Exception e) {
+                System.out.println("BŁĄD jakiś");
+                e.printStackTrace();
+            }
+        });
+    }
     public void init(Stage stage) {
         Platform.runLater(() -> {
             try {
                 BorderPane mainScreenPane=new BorderPane();
-//                StackPane root = new StackPane();
-//
-//                VBox vBox = new VBox();
-//
-//                vBox.setSpacing(8);
-//                vBox.setPadding(new Insets(10, 10, 10, 10));
-//
-//                TextField login = new TextField();
-//                PasswordField password = new PasswordField();
-//                Button button = new Button("LOGIN");
-//
-//                button.setOnAction(actionEvent -> {
-//                    System.out.println(login.getText() + " " + password.getText());
-//                    if (login.getText().length() != 0 && password.getText().length() != 0) {
-//
-//                        int resp = LoginController.getInstance().login(login.getText(), password.getText());
-//                        Alert a;
-//
-//                        switch (resp) {
-//
-//                            case 0:
-//                                a = new Alert(Alert.AlertType.NONE, "Wciśnij ok aby rozpocząć grę", ButtonType.OK);
-//                                a.setTitle("Utworzono konto");
-//                                a.showAndWait();
-//
-//                            case 1:
-//                                this.username = login.getText();
-//
-//                                try {
-//                                    newConnection();
-//                                } catch (Exception e) {
-//                                    throw new RuntimeException(e);
-//                                }
-//
-//                                buildScene();
-////                                to je chyba niepotrzebne
-////                                listenForMessage();
-//                                break;
-//
-//                            case -1:
-//                                a = new Alert(Alert.AlertType.ERROR);
-//                                a.setHeaderText("Wpisano złe hasło!");
-//                                a.setTitle("Odmowa dostępu!");
-//                                a.showAndWait();
-//                                break;
-//
-//                            default:
-//                                a = new Alert(Alert.AlertType.WARNING);
-//                                a.setHeaderText("Nie uzupełniono wszystkich pól!");
-//                                a.setTitle("Błąd!");
-//                                a.showAndWait();
-//                                break;
-//                        }
-//                    }
-//                });
-
                 HBox title=new HBox();
                 title.setAlignment(Pos.CENTER);
-               // Text titleText=;
+                // Text titleText=;
                 Text titleText=new Text("Battleships");
                 titleText.setFont(Font.font("system",36));
                 title.getChildren().add(titleText);
@@ -233,13 +255,16 @@ public class BattleshipMain extends Application {
                 //title.setMinWidth(400);
 
                 Button startButton=new Button("Rozpocznij grę");
+                startButton.setOnAction(event -> {
+                    loginScreen(stage);
+                });
                 HBox buttonHbox=new HBox(startButton);
-               // buttonHbox.setMinWidth(100);
+                // buttonHbox.setMinWidth(100);
                 buttonHbox.setAlignment(Pos.CENTER);
 
                 HBox.setMargin(buttonHbox,new Insets(11,20,0,0));
-               // buttonHbox.maxHeight(50);
-               // buttonHbox.setAlignment(Pos.CENTER);
+                // buttonHbox.maxHeight(50);
+                // buttonHbox.setAlignment(Pos.CENTER);
                 HBox topWrap=new HBox(title,buttonHbox);
                 topWrap.setAlignment(Pos.CENTER_RIGHT);
                 topWrap.setPrefHeight(150);
@@ -263,11 +288,18 @@ public class BattleshipMain extends Application {
                 //HBox.setMargin(ranking,new Insets(0,0,0,20));
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
+                List<User> rankingList= GameController.getInstance().findTopTenPlayers();
+                for(User user:rankingList){
+                    table.getItems().add(user);
+                }
                 mainScreenPane.setBottom(spaceFill);
                 mainScreenPane.setCenter(ranking);
 
-               stage.setScene(new Scene(mainScreenPane,600,750));
-               stage.show();
+                stage.setScene(new Scene(mainScreenPane,600,750));
+                stage.show();
+
+
+
 
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
