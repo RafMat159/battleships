@@ -51,6 +51,7 @@ public class BattleshipMain extends Application {
     private String username;
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
+    private Thread listenerThread;
     private BorderPane root;
     private int width = 600;
     private int height = 800;
@@ -131,7 +132,6 @@ public class BattleshipMain extends Application {
         });
 
         shipsToPlace = 5;
-        mayPlaceShips = false;
 
         playerBoard = new Board(false, event -> {
             if (running)
@@ -335,6 +335,7 @@ public class BattleshipMain extends Application {
 
     public void restartGame(){
         System.out.println("Restarting game");
+        mayPlaceShips = false;
         // wait to start game
         start = false;
         // set to false, so the ships can be placed again
@@ -348,6 +349,7 @@ public class BattleshipMain extends Application {
     public void endGameScreen(){
         //enemyTurn = true;
 
+        send("end game");
         Platform.runLater(()-> {
             try {
 
@@ -391,7 +393,9 @@ public class BattleshipMain extends Application {
                 });
 
                 end.setOnAction(event -> {
-                    System.exit(0);
+//                    System.exit(0);
+                    // chyba to powinno być żeby stop triggerować
+                    Platform.exit();
                 });
 
                 popupStage.show();
@@ -402,7 +406,7 @@ public class BattleshipMain extends Application {
         });
     }
     public void listenForMessage(){
-        new Thread(new Runnable() {
+        listenerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String msgFromGroupChat;
@@ -412,8 +416,13 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
-                        if (msgFromGroupChat.equals("left"))
+                        // tu wpada w pętlę po naciśnięciu new game przez jednego z graczy
+                        // wysyłany jest komunikat left, dla tamtego usera jest tworzony nowy pokój i od razu dla tego
+                        // pasuje jakoś rozrózniać te komunikaty
+                        if (msgFromGroupChat == null || msgFromGroupChat.equals("left")) {
                             restartGame();
+                            continue;
+                        }
 
                         if(!start) {
                             switch (msgFromGroupChat) {
@@ -475,12 +484,12 @@ public class BattleshipMain extends Application {
                     }
                 }
             }
-        }).start();
+        });
+        listenerThread.start();
     }
 
     public void closeConnection() {
         try {
-            send("left");
             if (bufferedWriter != null) {
                 bufferedWriter.close();
             }

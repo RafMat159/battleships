@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ExecutionException;
 
 public class ClientHandler implements Runnable{
 
@@ -69,8 +68,7 @@ public class ClientHandler implements Runnable{
     }
 
     public void newGame(){
-        clientMap.get(table).remove(this);
-        System.out.println("Usunięto ze stołu: "+table);
+        removeFromTable();
         try{
             this.addToTable();
         } catch (IOException e){
@@ -84,9 +82,12 @@ public class ClientHandler implements Runnable{
         while (socket.isConnected()){
             try{
                 messageFromClient = bufferedReader.readLine();
+                System.out.println("User: "+clientUsername+": "+messageFromClient);
                 if(messageFromClient.equals("new game")){
                     this.newGame();
-                } else {
+                } else if(messageFromClient.equals("end game")){
+                    this.removeFromTable();
+                }else {
                     broadcastMessage(messageFromClient);
                 }
             } catch (Exception e){
@@ -112,22 +113,22 @@ public class ClientHandler implements Runnable{
         }
     }
 
-    public void removeClientHanlder(){
+    public void removeFromTable(){
         clientMap.get(table).remove(this);
-        System.out.println("To zapewne tu się wywala");
+        System.out.println("User: "+clientUsername+", usunięto ze stołu: "+table);
         if(clientMap.get(table).size() == 0){
             System.out.println("Table " + table + " empty");
             clientMap.put(table, null);
         } else
-            broadcastMessage("SERVER: "+clientUsername+" has left");
-        System.out.println("chyba ta");
+            broadcastMessage("left");
+//        System.out.println("SERVER: "+clientUsername+" has left");
 
         available.put(table, true);
 //        clientHandlers.remove(this);
     }
 
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
-        removeClientHanlder();
+        removeFromTable();
         try{
             if(bufferedReader !=null){
                 bufferedReader.close();
