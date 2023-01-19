@@ -9,7 +9,7 @@ import java.util.Optional;
 public class GameController {
 
     public Integer updateRanking(String username, String message) {
-        Optional<User> userOptional = UserRepository.getInstance().findUserByUsernameWithRanking(username);
+        Optional<User> userOptional = UserRepository.getInstance().findUserByUsername(username);
 
         if (userOptional.isPresent()) {
             Ranking ranking = userOptional.get().getRanking();

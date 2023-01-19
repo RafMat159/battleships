@@ -30,25 +30,6 @@ public class UserRepository {
 
         Optional<User> result = Optional.empty();
         try {
-            Query query = session.createQuery("SELECT u FROM User u WHERE u.username=:username");
-            query.setParameter("username", username);
-            result = Optional.ofNullable((User) query.getSingleResult());
-        }catch (NoResultException e){
-            trasaction.commit();
-            session.close();
-            return result;
-        }
-        trasaction.commit();
-        session.close();
-        return result;
-    }
-
-    public Optional<User> findUserByUsernameWithRanking(String username){
-        var session = HibernateUtil.getSessionFactory().getCurrentSession();
-        var trasaction = session.beginTransaction();
-
-        Optional<User> result = Optional.empty();
-        try {
             Query query = session.createQuery("SELECT u FROM User u LEFT JOIN FETCH u.ranking WHERE u.username=:username");
             query.setParameter("username", username);
             result = Optional.ofNullable((User) query.getSingleResult());
@@ -61,7 +42,6 @@ public class UserRepository {
         session.close();
         return result;
     }
-
 
     public void addUser(User user){
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
@@ -92,9 +72,4 @@ public class UserRepository {
             session.close();
         }
     }
-
-
-
-
-//update liczbawygranych lub liczbaprzegranych
 }
