@@ -83,12 +83,22 @@ public class ClientHandler implements Runnable{
             try{
                 messageFromClient = bufferedReader.readLine();
                 System.out.println("User: "+clientUsername+": "+messageFromClient);
-                if(messageFromClient.equals("new game")){
-                    this.newGame();
-                } else if(messageFromClient.equals("end game")){
-                    this.removeFromTable();
-                }else {
-                    broadcastMessage(messageFromClient);
+
+                if(messageFromClient.startsWith("communication:")){                                         // chat communication
+                    String strippedMessage = messageFromClient.substring(14);
+                    broadcastMessage("communication:"+clientUsername+": "+strippedMessage);
+                }
+                else {
+                    switch (messageFromClient) {                                                            // commands
+                        case "new game":
+                            this.newGame();
+                            break;
+                        case "end game":
+                            closeEverything(socket, bufferedReader, bufferedWriter);
+                            break;
+                        default:
+                            broadcastMessage(messageFromClient);
+                    }
                 }
             } catch (Exception e){
                 closeEverything(socket,  bufferedReader, bufferedWriter);
@@ -114,21 +124,27 @@ public class ClientHandler implements Runnable{
     }
 
     public void removeFromTable(){
-        clientMap.get(table).remove(this);
-        System.out.println("User: "+clientUsername+", usunięto ze stołu: "+table);
-        if(clientMap.get(table).size() == 0){
-            System.out.println("Table " + table + " empty");
-            clientMap.put(table, null);
-        } else
-            broadcastMessage("left");
-//        System.out.println("SERVER: "+clientUsername+" has left");
-
-        available.put(table, true);
-//        clientHandlers.remove(this);
+        try {
+            var removingSuccessfull = clientMap.get(table).remove(this);
+            if (removingSuccessfull) {
+                System.out.println("User: " + clientUsername + ", usunięto ze stołu: " + table);
+                if (clientMap.get(table).size() == 0) {
+                    System.out.println("Table " + table + " empty");
+                    clientMap.put(table, null);
+                } else
+                    broadcastMessage("left");
+                available.put(table, true);
+                table = 0;
+            }
+        } catch (NullPointerException e){
+            System.out.println("Table "+table+" already empty");
+        }
     }
 
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
-        removeFromTable();
+        if (table != 0)
+            removeFromTable();
+
         try{
             if(bufferedReader !=null){
                 bufferedReader.close();

@@ -4,9 +4,21 @@ import pk.pwjj.entity.Ranking;
 import pk.pwjj.entity.User;
 import pk.pwjj.repository.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public class GameController {
+
+    private static GameController gameController;
+
+    private GameController(){
+    }
+
+    public static GameController getInstance(){
+        if(gameController == null)
+            gameController = new GameController();
+        return gameController;
+    }
 
     public Integer updateRanking(String username, String message) {
         Optional<User> userOptional = UserRepository.getInstance().findUserByUsername(username);
@@ -24,6 +36,10 @@ public class GameController {
             return 0;
         }
         return -1;
+    }
+
+    public List<User> findTopTenPlayers(){
+        return UserRepository.getInstance().findTopTenPlayers();
     }
 
 }

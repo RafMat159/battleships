@@ -6,6 +6,8 @@ import pk.pwjj.entity.User;
 
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -26,31 +28,34 @@ public class UserRepository {
 
     public Optional<User> findUserByUsername(String username){
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
-        var trasaction = session.beginTransaction();
+        var transaction = session.beginTransaction();
 
         Optional<User> result = Optional.empty();
         try {
-            Query query = session.createQuery("SELECT u FROM User u WHERE u.username=:username");
+            Query query = session.createQuery("SELECT u FROM User u LEFT JOIN FETCH u.ranking WHERE u.username=:username");
             query.setParameter("username", username);
             result = Optional.ofNullable((User) query.getSingleResult());
+            transaction.commit();
         }catch (NoResultException e){
-            trasaction.commit();
-            session.close();
+            transaction.commit();
+            System.out.println("Uzytkownik o takiej nazwie uzytkownika nie istnieje");
             return result;
+        }finally {
+            session.close();
         }
-        trasaction.commit();
-        session.close();
+
         return result;
     }
 
     public void addUser(User user){
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
-        var trasaction = session.beginTransaction();
+        var transaction = session.beginTransaction();
 
         try{
             session.save(user);
-            trasaction.commit();
+            transaction.commit();
         }catch(Exception e){
+            transaction.rollback();
             e.printStackTrace();
         }
         finally {
@@ -61,20 +66,37 @@ public class UserRepository {
 
     public void updateRanking(Ranking ranking){
         var session = HibernateUtil.getSessionFactory().getCurrentSession();
-        var trasaction = session.beginTransaction();
+        var transaction = session.beginTransaction();
 
         try{
             session.update(ranking);
-            trasaction.commit();
+            transaction.commit();
         }catch (Exception e){
+            transaction.rollback();
             e.printStackTrace();
         }finally {
             session.close();
         }
     }
 
+    public List<User> findTopTenPlayers(){
+        var session = HibernateUtil.getSessionFactory().getCurrentSession();
+        var transaction = session.beginTransaction();
 
+        List<User> result = new ArrayList<>();
+        try{
+            Query query = session.createQuery("SELECT u FROM User u LEFT JOIN FETCH u.ranking ORDER BY u.ranking.gameWin DESC ").setMaxResults(10);
+            result = (List<User>) query.getResultList();
+            transaction.commit();
+        }catch (Exception e){
+            transaction.rollback();
+            e.printStackTrace();
+            return result;
+        }finally {
+            session.close();
+        }
 
+        return result;
+    }
 
-//update liczbawygranych lub liczbaprzegranych
 }

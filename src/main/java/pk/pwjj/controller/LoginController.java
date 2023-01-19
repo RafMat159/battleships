@@ -11,6 +11,17 @@ import java.util.Optional;
 
 public class LoginController {
 
+    private static LoginController loginController;
+
+    private LoginController(){
+    }
+
+    public static LoginController getInstance(){
+        if(loginController == null)
+            loginController = new LoginController();
+        return loginController;
+    }
+
     public Integer login(String username, String password) {
         Optional<User> userOptional = UserRepository.getInstance().findUserByUsername(username);
 
