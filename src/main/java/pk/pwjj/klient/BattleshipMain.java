@@ -17,11 +17,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -180,66 +178,115 @@ public class BattleshipMain extends Application {
     public void init(Stage stage) {
         Platform.runLater(()-> {
             try {
-               // this.primaryStage = primaryStage;
-                LoginController loginController=new LoginController();
 
-                StackPane root = new StackPane();
+                BorderPane mainScreenPane=new BorderPane();
 
-                VBox vBox = new VBox();
+                HBox title=new HBox();
+                title.setAlignment(Pos.CENTER);
+               // Text titleText=;
+                Text titleText=new Text("Battleships");
+                titleText.setFont(Font.font("system",36));
+                title.getChildren().add(titleText);
+                HBox.setMargin(title,new Insets(0,105,0,0));
 
-                vBox.setSpacing(8);
-                vBox.setPadding(new Insets(10, 10, 10, 10));
+                //title.setMinWidth(400);
 
-                TextField login= new TextField();
-                PasswordField password=new PasswordField();
-                Button button=new Button("LOGIN");
-                button.setOnAction(actionEvent-> {
-                    System.out.println(login.getText()+" "+password.getText());
-                    if(login.getText().length()!=0&&password.getText().length()!=0) {
-                        int resp= loginController.login(login.getText(),password.getText());
-                        if(resp==0){
-                            Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
-                            a.setTitle("Utworzono konto");
-                            a.showAndWait();
-                        }
-                        if(resp==1||resp==0)
-                        {
-                            this.username = login.getText();
-                            try {
-                                newConnection();
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                            buildScene();
-                            listenForMessage();
-                        }
-                        else if(resp==-1){
-                            Alert a = new Alert(Alert.AlertType.ERROR);
-                            a.setHeaderText("Wpisano złe hasło!");
-                            a.setTitle("Odmowa dostępu!");
-                            a.showAndWait();
-                        }
-                    }
-                    else{
-                        Alert a = new Alert(Alert.AlertType.WARNING);
-                        a.setHeaderText("Nie uzupełniono wszystkich pól!");
-                        a.setTitle("Błąd!");
-                        a.showAndWait();
-                    }
-                });
+                Button startButton=new Button("Rozpocznij grę");
+                HBox buttonHbox=new HBox(startButton);
+               // buttonHbox.setMinWidth(100);
+                buttonHbox.setAlignment(Pos.CENTER);
 
-                vBox.getChildren().addAll(
-                        new Label("Your Username"),
-                        login,
-                        new Label("Your Password"),
-                        password,
-                        button);
-                root.getChildren().addAll(vBox);
+                HBox.setMargin(buttonHbox,new Insets(11,20,0,0));
+               // buttonHbox.maxHeight(50);
+               // buttonHbox.setAlignment(Pos.CENTER);
+                HBox topWrap=new HBox(title,buttonHbox);
+                topWrap.setAlignment(Pos.CENTER_RIGHT);
+                topWrap.setPrefHeight(150);
+                mainScreenPane.setTop(topWrap);
+                TableView table=new TableView<>();
+                TableColumn place=new TableColumn<>("Miejsce w rankingu");
+                place.setReorderable(false);
+                place.setSortable(false);
+                place.setPrefWidth(128);
+                TableColumn name=new TableColumn<>("Nazwa gracza");
+                name.setReorderable(false);
+                name.setSortable(false);
+                name.setPrefWidth(110);
+                TableColumn winNumber=new TableColumn<>("Ilość wygranych");
+                winNumber.setReorderable(false);
+                winNumber.setSortable(false);
+                winNumber.setPrefWidth(106);
+                table.getColumns().addAll(place,name,winNumber);
+                HBox ranking=new HBox(table);
+                ranking.setAlignment(Pos.CENTER);
+                //HBox.setMargin(ranking,new Insets(0,0,0,20));
+                HBox spaceFill=new HBox();
+                spaceFill.setPrefSize(600,100);
+                mainScreenPane.setBottom(spaceFill);
+                mainScreenPane.setCenter(ranking);
 
-                Scene scene = new Scene(root, 400, 600);
-
-                stage.setScene(scene);
-                stage.show();
+               stage.setScene(new Scene(mainScreenPane,600,750));
+               stage.show();
+//               // this.primaryStage = primaryStage;
+//                LoginController loginController=new LoginController();
+//
+//                StackPane root = new StackPane();
+//
+//                VBox vBox = new VBox();
+//
+//                vBox.setSpacing(8);
+//                vBox.setPadding(new Insets(10, 10, 10, 10));
+//
+//                TextField login= new TextField();
+//                PasswordField password=new PasswordField();
+//                Button button=new Button("LOGIN");
+//                button.setOnAction(actionEvent-> {
+//                    System.out.println(login.getText()+" "+password.getText());
+//                    if(login.getText().length()!=0&&password.getText().length()!=0) {
+//                        int resp= loginController.login(login.getText(),password.getText());
+//                        if(resp==0){
+//                            Alert a = new Alert(Alert.AlertType.NONE,"Wciśnij ok aby rozpocząć grę",ButtonType.OK);
+//                            a.setTitle("Utworzono konto");
+//                            a.showAndWait();
+//                        }
+//                        if(resp==1||resp==0)
+//                        {
+//                            this.username = login.getText();
+//                            try {
+//                                newConnection();
+//                            } catch (Exception e) {
+//                                throw new RuntimeException(e);
+//                            }
+//                            buildScene();
+//                            listenForMessage();
+//                        }
+//                        else if(resp==-1){
+//                            Alert a = new Alert(Alert.AlertType.ERROR);
+//                            a.setHeaderText("Wpisano złe hasło!");
+//                            a.setTitle("Odmowa dostępu!");
+//                            a.showAndWait();
+//                        }
+//                    }
+//                    else{
+//                        Alert a = new Alert(Alert.AlertType.WARNING);
+//                        a.setHeaderText("Nie uzupełniono wszystkich pól!");
+//                        a.setTitle("Błąd!");
+//                        a.showAndWait();
+//                    }
+//                });
+//
+//                vBox.getChildren().addAll(
+//                        new Label("Your Username"),
+//                        login,
+//                        new Label("Your Password"),
+//                        password,
+//                        button);
+//                root.getChildren().addAll(vBox);
+//
+//                Scene scene = new Scene(root, 400, 600);
+//
+//                stage.setScene(scene);
+//                stage.show();
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
