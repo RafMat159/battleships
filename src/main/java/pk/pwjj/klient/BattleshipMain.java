@@ -565,9 +565,6 @@ public class BattleshipMain extends Application {
                         msgFromGroupChat = bufferedReader.readLine();
                         System.out.println("Co dostał: " + msgFromGroupChat);
 
-                        // enemy left before game start
-                        if (msgFromGroupChat.equals("left") && !(winStatus == null && start))
-                            addMessage("Your enemy left - waiting for another to join\n");
 
                         // if someone left, and the game has no result (someone left during game) and was started then restart game
                         if (msgFromGroupChat == null || (msgFromGroupChat.equals("left") && winStatus == null && start)) {
@@ -575,6 +572,10 @@ public class BattleshipMain extends Application {
                             restartGame();
                             continue;
                         }
+
+                        // enemy left before game start
+                        if (msgFromGroupChat.equals("left") && !(winStatus == null && start))
+                            addMessage("Your enemy left - waiting for another to join\n");
 
                         // chat communication
                         if (msgFromGroupChat.startsWith("communication:")) {
