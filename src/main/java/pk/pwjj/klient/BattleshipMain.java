@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -17,6 +18,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import pk.pwjj.DTO.UserRankingDTO;
 import pk.pwjj.HibernateUtil;
 import pk.pwjj.controller.GameController;
 import pk.pwjj.controller.LoginController;
@@ -339,16 +341,19 @@ public class BattleshipMain extends Application {
                 topWrap.setAlignment(Pos.CENTER_RIGHT);
                 topWrap.setPrefHeight(150);
                 mainScreenPane.setTop(topWrap);
-                TableView table=new TableView<>();
+                TableView table=new TableView<UserRankingDTO>();
                 TableColumn place=new TableColumn<>("Miejsce w rankingu");
+                place.setCellValueFactory(new PropertyValueFactory<>("number"));
                 place.setReorderable(false);
                 place.setSortable(false);
                 place.setPrefWidth(128);
                 TableColumn name=new TableColumn<>("Nazwa gracza");
+                name.setCellValueFactory(new PropertyValueFactory<>("username"));
                 name.setReorderable(false);
                 name.setSortable(false);
                 name.setPrefWidth(110);
                 TableColumn winNumber=new TableColumn<>("Ilość wygranych");
+                winNumber.setCellValueFactory(new PropertyValueFactory<>("gameWin"));
                 winNumber.setReorderable(false);
                 winNumber.setSortable(false);
                 winNumber.setPrefWidth(106);
@@ -358,8 +363,9 @@ public class BattleshipMain extends Application {
                 //HBox.setMargin(ranking,new Insets(0,0,0,20));
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
-                List<User> rankingList= GameController.getInstance().findTopTenPlayers();
-                for(User user:rankingList){
+                //
+                List<UserRankingDTO> rankingList= GameController.getInstance().findTopTenPlayers();
+                for(UserRankingDTO user:rankingList){
                     table.getItems().add(user);
                 }
                 mainScreenPane.setBottom(spaceFill);
