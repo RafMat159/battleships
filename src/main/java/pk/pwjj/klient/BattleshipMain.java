@@ -363,6 +363,7 @@ public class BattleshipMain extends Application {
                 //HBox.setMargin(ranking,new Insets(0,0,0,20));
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
+                //
                 List<UserRankingDTO> rankingList= GameController.getInstance().findTopTenPlayers();
                 for(UserRankingDTO user:rankingList){
                     table.getItems().add(user);
