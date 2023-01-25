@@ -23,7 +23,9 @@ import javafx.scene.text.Text;
  */
 public class Board extends Parent {
     private VBox rows = new VBox();
+    /** indicates if board belongs to current user or enemy*/
     private boolean enemy = false;
+    /** number ships that are still on board*/
     public int ships = 5;
 
     /**

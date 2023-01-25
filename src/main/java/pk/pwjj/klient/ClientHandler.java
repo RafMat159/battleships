@@ -12,14 +12,20 @@ import java.util.Set;
  */
 public class ClientHandler implements Runnable{
 
+    /** all available boards */
     public static HashMap<Integer, ArrayList<ClientHandler>> clientMap = new HashMap<>();
+    /** map of all available boards*/
     public static HashMap<Integer, Boolean> available = new HashMap<>();
+    /** all active users */
     public static Set<String> users = new HashSet<>();
     private Socket socket;
+    /** number of table*/
     private int table;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
+    /** username of client*/
     private String clientUsername;
+    /** indicates if client can start game first*/
     private Boolean startsFirst=false;
 
     /**

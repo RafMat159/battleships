@@ -6,9 +6,11 @@ import javafx.scene.Parent;
  * Single ship instance.
  */
 public class Ship extends Parent {
+    /** ship number for certain board*/
     public int type;
+    /** type of ship layout*/
     public boolean vertical = true;
-
+    /** health of ship*/
     private int health;
 
     /**
