@@ -34,30 +34,48 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Class responsible for controlling game
+ */
 public class BattleshipMain extends Application {
 
+    /** true if ships have been placed and false if they have not or game is finished */
     private boolean running = false;
+    /** set for true if opponent have placed ships */
     private boolean start = false;
+    /** false if it is current player's turn */
     private boolean enemyTurn = false;
+    /** indicates if player can place ships */
     private Boolean mayPlaceShips = false;
+    /** if game has ended indicates if player is winner or looser*/
     private String winStatus = null;
+    /** game boards */
     private Board enemyBoard, playerBoard;
+    /** indicates how many ships player has left to place */
     private int shipsToPlace = 5;
-
-
+    /** primary stage of game */
     private Stage primaryStage;
 
-    TextArea displayAllMessages = new TextArea();;
+    /** text area for chat*/
+    TextArea displayAllMessages = new TextArea();
+
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
+
+    /** player name*/
     private String username;
+
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
     private BorderPane root;
     private final int width = 800;
     private final int height = 800;
 
+    /**
+     * Creates player and enemy board.
+     * @return returns border pane with
+     */
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
@@ -101,7 +119,7 @@ public class BattleshipMain extends Application {
 
                         cell.setFill(Color.BLACK);
 
-                        // if ship was hit, set it's color to red and shoot again
+                        // if cell was shot it is colored and player can continue shooting
                         if (resp.equals("hit") || resp.equals("sunk")) {
                             enemyTurn = false;
                             cell.setFill(Color.RED);
@@ -119,7 +137,6 @@ public class BattleshipMain extends Application {
                     } finally {
                         lock.unlock();
                     }
-
 
                 }
             }).start();
@@ -154,10 +171,18 @@ public class BattleshipMain extends Application {
         return root;
     }
 
+    /**
+     *  Adds message to current player chat.
+     * @param msg message
+     */
     public void addMessage(String msg) {
         displayAllMessages.appendText(msg);
     }
 
+    /**
+     * Creates grid pane for chat.
+     * @return grid pane with chat
+     */
     public GridPane createChat() {
 
         TextField enterMessageField = new TextField();
@@ -208,6 +233,10 @@ public class BattleshipMain extends Application {
         return rootPane;
     }
 
+    /**
+     * Creates new connection for player.
+     * @throws Exception
+     */
     public void newConnection() throws Exception {
         Socket socket = new Socket("localhost", 1234);
 
@@ -226,6 +255,11 @@ public class BattleshipMain extends Application {
         listenForMessage();
         chatWriter();
     }
+
+    /**
+     * Creates login screen.
+     * @param stage that login screen appears on
+     */
     public void loginScreen(Stage stage){
         Platform.runLater(() -> {
             try {
@@ -308,6 +342,11 @@ public class BattleshipMain extends Application {
             }
         });
     }
+
+    /**
+     * Creates app starting screen.
+     * @param stage that start screen appears on
+     */
     public void init(Stage stage) {
         Platform.runLater(() -> {
             try {
@@ -379,6 +418,9 @@ public class BattleshipMain extends Application {
         });
     }
 
+    /**
+     * Creates primary stage.
+     */
     public void buildScene() {
         Platform.runLater(() -> {
             Scene scene = new Scene(createContent());
@@ -389,7 +431,10 @@ public class BattleshipMain extends Application {
         });
     }
 
-
+    /**
+     * Starting game session.
+     * @param primaryStage that all scenes appear on
+     */
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -405,7 +450,9 @@ public class BattleshipMain extends Application {
 
     }
 
-
+    /**
+     * Finishes game.
+     */
     @Override
     public void stop() {
         System.out.println("App exit");
@@ -424,6 +471,10 @@ public class BattleshipMain extends Application {
         }, "Shutdown-thread"));
     }
 
+    /**
+     * Sends message to server and opponent
+     * @param msg message
+     */
     private void send(String msg) {
         try {
             System.out.println("SEND MESSAGE: " + msg);
@@ -438,7 +489,10 @@ public class BattleshipMain extends Application {
         }
     }
 
-
+    /**
+     * Handles click event
+     * @param cords coordinates
+     */
     public void checkHit(String cords) {
         Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
         System.out.println("Check cell: " + cell.x + cell.y);
@@ -466,6 +520,9 @@ public class BattleshipMain extends Application {
         }
     }
 
+    /**
+     * Restarting game.
+     */
     public void restartGame() {
         System.out.println("Restarting game");
 
@@ -483,6 +540,9 @@ public class BattleshipMain extends Application {
         buildScene();
     }
 
+    /**
+     * Creates popup for ending game.
+     */
     public void endGameScreen() {
 
         Platform.runLater(() -> {
@@ -539,7 +599,9 @@ public class BattleshipMain extends Application {
         });
     }
 
-    // send chat message with specific prefix
+    /**
+     * Send chat message with specific prefix
+     */
     public void chatWriter() {
         new Thread(new Runnable() {
             @Override
@@ -554,6 +616,9 @@ public class BattleshipMain extends Application {
         }).start();
     }
 
+    /**
+     * Listens for message.
+     */
     public void listenForMessage() {
         new Thread(new Runnable() {
             @Override
@@ -654,6 +719,9 @@ public class BattleshipMain extends Application {
         }).start();
     }
 
+    /**
+     * Closing game connection.
+     */
     public void closeConnection() {
         try {
             if (bufferedWriter != null) {

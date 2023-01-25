@@ -4,14 +4,24 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Game server.
+ */
 public class Server {
 
     private ServerSocket serverSocket;
 
+    /**
+     * Initiation of Server.
+     * @param serverSocket socket that handles Server communication
+     */
     public Server(ServerSocket serverSocket){
         this.serverSocket = serverSocket;
     }
 
+    /**
+     * Starting Server.
+     */
     public void startServer(){
 
         try {
@@ -28,21 +38,24 @@ public class Server {
 
             }
         } catch (IOException e){
-
+            closeServerSocket();
         }
 
 
     }
-        public void closeServerSocket(){
-            try{
-                if(serverSocket != null){
-                    serverSocket.close();
-                }
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-        }
 
+    /**
+     * Closes socket of Server.
+     */
+    public void closeServerSocket(){
+        try{
+            if(serverSocket != null){
+                serverSocket.close();
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) throws IOException {
         System.out.println("Hello world!");
