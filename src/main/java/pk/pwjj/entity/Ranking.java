@@ -2,6 +2,9 @@ package pk.pwjj.entity;
 
 import javax.persistence.*;
 
+/**
+ * Entity Ranking
+ * */
 @Entity
 @Table(name = "ranking")
 public class Ranking {

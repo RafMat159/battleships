@@ -1,5 +1,8 @@
 package pk.pwjj.DTO;
 
+/**
+ * UserRankingDTO class that is used to transform data
+ * */
 public class UserRankingDTO {
 
     private Integer number;

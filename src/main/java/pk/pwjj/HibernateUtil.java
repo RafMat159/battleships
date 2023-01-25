@@ -6,21 +6,34 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 /**
- * Klasa odpowiadająca za tworzenie fabryki sesji(SessionFactory) i innych tego typu rzeczy, które są potrzebne do pracy z Hibernatem
+ * HibernateUtil class that builds and closes session factory
  */
 public class HibernateUtil {
+
+    /**The constant that is used to store SessionFactory object*/
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
+    /**
+     * Function that closes the session factory
+     * */
     static void close() {
         if (sessionFactory != null) {
             sessionFactory.close();
         }
     }
 
+    /**
+     * Function that returns an instance of the SessionFactory class
+     * @return an instance of the SessionFactory class
+     * */
     public static SessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
+    /**
+     * Function that builds SessionFactory
+     * @return built SessionFactory
+     * */
     private static SessionFactory buildSessionFactory() {
         // A SessionFactory is set up once for an application!
         final StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
@@ -36,6 +49,9 @@ public class HibernateUtil {
         }
     }
 
+    /**
+     * Hibernate (JPA) needs it.
+     * */
     private HibernateUtil() {
     }
 

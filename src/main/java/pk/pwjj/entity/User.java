@@ -2,6 +2,9 @@ package pk.pwjj.entity;
 
 import javax.persistence.*;
 
+/**
+ * Entity User
+ * */
 @Entity
 @Table(name = "users")
 public class User {

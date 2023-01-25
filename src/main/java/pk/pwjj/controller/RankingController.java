@@ -9,19 +9,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class GameController {
+/**
+ * The RankingController class provides basic functions that show ranking
+ * */
+public class RankingController {
 
-    private static GameController gameController;
+    /**The constant that is used to store RankingController object*/
+    private static RankingController rankingController;
 
-    private GameController(){
+    private RankingController(){
     }
 
-    public static GameController getInstance(){
-        if(gameController == null)
-            gameController = new GameController();
-        return gameController;
+    /**
+     * Function that returns an instance of the RankingController class
+     * @return an instance of the RankingController class
+     * */
+    public static RankingController getInstance(){
+        if(rankingController == null)
+            rankingController = new RankingController();
+        return rankingController;
     }
 
+    /**
+     * Function that updates ranking
+     * @param username username of particular user
+     * @param message message from server
+     * @return 0 - successful operation 1 - unsuccessful operation
+     * */
     public Integer updateRanking(String username, String message) {
         Optional<User> userOptional = UserRepository.getInstance().findUserByUsername(username);
 
@@ -40,6 +54,10 @@ public class GameController {
         return -1;
     }
 
+    /**
+     * Function that returns the top ten players from the database
+     * @return list of top ten users
+     * */
     public List<UserRankingDTO> findTopTenPlayers(){
         List<User> users = UserRepository.getInstance().findTopTenPlayers();
         List<UserRankingDTO> userRankingDTOS = new ArrayList<>();

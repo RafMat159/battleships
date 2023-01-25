@@ -20,13 +20,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import pk.pwjj.DTO.UserRankingDTO;
 import pk.pwjj.HibernateUtil;
-import pk.pwjj.controller.GameController;
+import pk.pwjj.controller.RankingController;
 import pk.pwjj.controller.LoginController;
-import pk.pwjj.entity.User;
 import pk.pwjj.klient.Board.Cell;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.List;
 import java.util.Scanner;
@@ -364,7 +362,7 @@ public class BattleshipMain extends Application {
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
                 //
-                List<UserRankingDTO> rankingList= GameController.getInstance().findTopTenPlayers();
+                List<UserRankingDTO> rankingList= RankingController.getInstance().findTopTenPlayers();
                 for(UserRankingDTO user:rankingList){
                     table.getItems().add(user);
                 }
@@ -453,7 +451,7 @@ public class BattleshipMain extends Application {
         }else if(state == 1){
             send("hit");
             if (playerBoard.ships == 0) {
-                GameController.getInstance().updateRanking(this.username, "lose");
+                RankingController.getInstance().updateRanking(this.username, "lose");
                 send("win");
                 winStatus = "GAME LOST";
                 System.out.println("GAME LOST");
@@ -641,7 +639,7 @@ public class BattleshipMain extends Application {
                                         break;
 
                                     case "win":
-                                        GameController.getInstance().updateRanking(username, "win");
+                                        RankingController.getInstance().updateRanking(username, "win");
                                         addMessage("YOU WIN");
                                         winStatus = "GAME WON";
                                         endGameScreen();
