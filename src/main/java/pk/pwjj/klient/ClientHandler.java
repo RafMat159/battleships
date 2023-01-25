@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /***
  * ClientHandler is responsible for communication client-server
@@ -12,6 +14,7 @@ public class ClientHandler implements Runnable{
 
     public static HashMap<Integer, ArrayList<ClientHandler>> clientMap = new HashMap<>();
     public static HashMap<Integer, Boolean> available = new HashMap<>();
+    public static Set<String> users = new HashSet<>();
     private Socket socket;
     private int table;
     private BufferedReader bufferedReader;
@@ -47,9 +50,7 @@ public class ClientHandler implements Runnable{
             if (arr.size() == 2) {
                 available.put(table, false);
                 sendToOpponent("first");
-                this.bufferedWriter.write("second");
-                this.bufferedWriter.newLine();
-                this.bufferedWriter.flush();
+                sendToClient("second");
             }
         }
         else{
@@ -71,8 +72,15 @@ public class ClientHandler implements Runnable{
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.clientUsername = bufferedReader.readLine();
-            this.addToTable();
-            sendToOpponent("SERVER:"+clientUsername+" joined chat");
+            if(users.contains(clientUsername)){
+                sendToClient("login error");
+            }
+            else {
+                users.add(this.clientUsername);
+                sendToClient("login successful");
+                this.addToTable();
+                sendToOpponent("SERVER:" + clientUsername + " joined chat");
+            }
         } catch (IOException e){
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
@@ -81,6 +89,20 @@ public class ClientHandler implements Runnable{
     /**
      * Function that handles removing client from table and adding to new game.
      */
+    public void sendToClient(String msg){
+        try {
+            System.out.println("SEND MESSAGE: " + msg);
+            bufferedWriter.flush();
+            bufferedWriter.write(msg);
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+        } catch (IOException e){
+            closeEverything(socket, bufferedReader, bufferedWriter);
+        } catch (NullPointerException e) {
+            System.out.println("Message is null, cannot send");
+        }
+    }
+
     public void newGame(){
         removeFromTable();
         try{
@@ -174,6 +196,9 @@ public class ClientHandler implements Runnable{
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
         if (table != 0)
             removeFromTable();
+
+        if(users.contains(this.clientUsername))
+            users.remove(this.clientUsername);
 
         try{
             if(bufferedReader !=null){
