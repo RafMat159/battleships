@@ -118,7 +118,7 @@ public class Board extends Parent {
 
     public Cell getCell(int x, int y) {
         if (isValidPoint(x,y))
-            return (Cell)((HBox)rows.getChildren().get(y)).getChildren().get(x);
+            return (Cell)((HBox)rows.getChildren().get(y+1)).getChildren().get(x+1);
         else
             return null;
     }
