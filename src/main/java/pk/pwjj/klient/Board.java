@@ -4,13 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 
 public class Board extends Parent {
     private VBox rows = new VBox();
@@ -19,8 +25,35 @@ public class Board extends Parent {
 
     public Board(boolean enemy, EventHandler<? super MouseEvent> handler) {
         this.enemy = enemy;
+        HBox title=new HBox();
+        title.setAlignment(Pos.CENTER);
+        Text titleText=new Text();
+
+        titleText.setFont(Font.font("verdana", FontWeight.BOLD,15));
+        if(enemy==false) {
+            titleText.setText("Moje statki");
+            title.getChildren().add(titleText);
+            title.setPadding(new Insets(0,0,0,30));
+        }
+        else {
+            titleText.setText("Statki przeciwnika");
+            title.getChildren().add(titleText);
+            title.setPadding(new Insets(0,0,0,35));
+        }
+        rows.getChildren().add(title);
+        char[] alphabet = "ABCDEFGHIJ".toCharArray();
         for (int y = 0; y < 10; y++) {
             HBox row = new HBox();
+
+            HBox info=new HBox();
+            Text cellInfo=new Text(String.valueOf(alphabet[y]));
+            cellInfo.setFont(Font.font(15));
+            info.getChildren().add(cellInfo);
+            info.setAlignment(Pos.CENTER);
+            info.setPadding(new Insets(0,10,0,0));
+            info.setPrefSize(30,30);
+            row.getChildren().add(info);
+
             for (int x = 0; x < 10; x++) {
                 Cell c = new Cell(x, y, this);
                 c.setOnMouseClicked(handler);
@@ -30,6 +63,25 @@ public class Board extends Parent {
             rows.getChildren().add(row);
         }
 
+        HBox row = new HBox();
+        HBox info=new HBox();
+        Text cellInfo=new Text(String.valueOf(" ".toString()));
+        cellInfo.setFont(Font.font(15));
+        info.getChildren().add(cellInfo);
+        info.setAlignment(Pos.CENTER);
+       // info.setPadding(new Insets(0,10,0,0));
+        info.setPrefSize(30,30);
+        row.getChildren().add(info);
+        for(int x=1;x<11;x++) {
+            info=new HBox();
+            info.setPrefSize(31,30);
+            Text infoText=new Text(String.valueOf(x));
+            infoText.setFont(Font.font(15));
+            info.getChildren().add(infoText);
+            info.setAlignment(Pos.CENTER);
+            row.getChildren().add(info);
+        }
+        rows.getChildren().add(row);
         getChildren().add(rows);
     }
 
