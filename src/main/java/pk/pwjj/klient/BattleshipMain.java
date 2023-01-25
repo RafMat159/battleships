@@ -32,30 +32,48 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Class responsible for controlling game
+ */
 public class BattleshipMain extends Application {
 
+    /** true if ships have been placed and false if they have not or game is finished */
     private boolean running = false;
+    /** set for true if opponent have placed ships */
     private boolean start = false;
+    /** false if it is current player's turn */
     private boolean enemyTurn = false;
+    /** indicates if player can place ships */
     private Boolean mayPlaceShips = false;
+    /** if game has ended indicates if player is winner or looser*/
     private String winStatus = null;
+    /** game boards */
     private Board enemyBoard, playerBoard;
+    /** indicates how many ships player has left to place */
     private int shipsToPlace = 5;
-
-
+    /** primary stage of game */
     private Stage primaryStage;
 
-    TextArea displayAllMessages = new TextArea();;
+    /** text area for chat*/
+    TextArea displayAllMessages = new TextArea();
+
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
+
+    /** player name*/
     private String username;
+
     private String globalMessage;
     private final Lock lock = new ReentrantLock();
     private BorderPane root;
     private final int width = 800;
     private final int height = 800;
 
+    /**
+     * Creates player and enemy board.
+     * @return returns border pane with
+     */
     private Parent createContent() {
         root = new BorderPane();
         root.setPrefSize(width, height);
@@ -66,12 +84,12 @@ public class BattleshipMain extends Application {
 
             Board.Cell cell = (Board.Cell) event.getSource();
 
-            // tu sprawdza czy raz już ktoś szczzelił
+            // check if cell was already shot
             if (cell.wasShot) {
                 return;
             }
 
-            //wysyła wiadomość
+            // send message what cell do you shoot
             if (start) {
                 send(String.valueOf(cell.x) + String.valueOf(cell.y));
                 enemyTurn = true;
@@ -99,7 +117,7 @@ public class BattleshipMain extends Application {
 
                         cell.setFill(Color.BLACK);
 
-                        // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
+                        // if cell was shot it is colored and player can continue shooting
                         if (resp.equals("hit") || resp.equals("sunk")) {
                             enemyTurn = false;
                             cell.setFill(Color.RED);
@@ -112,14 +130,11 @@ public class BattleshipMain extends Application {
                             enemyTurn = true;
                             send("end");
                             cell.setDisable(true);
-//                                break;
                         }
 
                     } finally {
                         lock.unlock();
-                        System.out.println("CATCH");
                     }
-
 
                 }
             }).start();
@@ -154,10 +169,18 @@ public class BattleshipMain extends Application {
         return root;
     }
 
+    /**
+     *  Adds message to current player chat.
+     * @param msg message
+     */
     public void addMessage(String msg) {
         displayAllMessages.appendText(msg);
     }
 
+    /**
+     * Creates grid pane for chat.
+     * @return grid pane with chat
+     */
     public GridPane createChat() {
 
         TextField enterMessageField = new TextField();
@@ -175,9 +198,6 @@ public class BattleshipMain extends Application {
         button.setMinWidth(50);
         button.setDefaultButton(true);
 
-//        VBox vBoxChat = new VBox(enterMessageField);
-//        vBoxChat.setPadding(new Insets(10, 10, 10, 10));
-
         VBox vBoxChatIncoming = new VBox(displayAllMessages);
         vBoxChatIncoming.setPadding(new Insets(10, 10, 10, 10));
 
@@ -187,13 +207,6 @@ public class BattleshipMain extends Application {
         GridPane rootPane = new GridPane();
         rootPane.add(vBoxChatIncoming, 0, 0);
         rootPane.add(hBoxSend, 0, 1);
-//        rootPane.add(vBoxEnter, 1, 1);
-
-//        Scene scene = new Scene(rootPane, 800, 700, Color.WHITE);
-//        stage.setScene(scene);
-//        stage.setTitle("Chat");
-//        stage.show();
-
 
         enterMessageField.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -218,6 +231,10 @@ public class BattleshipMain extends Application {
         return rootPane;
     }
 
+    /**
+     * Creates new connection for player.
+     * @throws Exception
+     */
     public void newConnection() throws Exception {
         Socket socket = new Socket("localhost", 1234);
 
@@ -230,9 +247,17 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeConnection();
         }
+
+        globalMessage = bufferedReader.readLine();
+        System.out.println(globalMessage);
         listenForMessage();
         chatWriter();
     }
+
+    /**
+     * Creates login screen.
+     * @param stage that login screen appears on
+     */
     public void loginScreen(Stage stage){
         Platform.runLater(() -> {
             try {
@@ -257,8 +282,8 @@ public class BattleshipMain extends Application {
                         switch (resp) {
 
                             case 0:
-                                a = new Alert(Alert.AlertType.NONE, "Wciśnij ok aby rozpocząć grę", ButtonType.OK);
-                                a.setTitle("Utworzono konto");
+                                a = new Alert(Alert.AlertType.NONE, "Press ok to start the game", ButtonType.OK);
+                                a.setTitle("Account created");
                                 a.showAndWait();
 
                             case 1:
@@ -270,22 +295,26 @@ public class BattleshipMain extends Application {
                                     throw new RuntimeException(e);
                                 }
 
-                                buildScene();
-//                                to je chyba niepotrzebne
-//                                listenForMessage();
+                                if (globalMessage.equals("login error")) {
+                                    a = new Alert(Alert.AlertType.ERROR);
+                                    a.setHeaderText("User already logged in!");
+                                    a.setTitle("Access denied!");
+                                    a.showAndWait();
+                                } else if (globalMessage.equals("login successful"))
+                                    buildScene();
                                 break;
 
                             case -1:
                                 a = new Alert(Alert.AlertType.ERROR);
-                                a.setHeaderText("Wpisano złe hasło!");
-                                a.setTitle("Odmowa dostępu!");
+                                a.setHeaderText("Password incorrect!");
+                                a.setTitle("Access denied!");
                                 a.showAndWait();
                                 break;
 
                             default:
                                 a = new Alert(Alert.AlertType.WARNING);
-                                a.setHeaderText("Nie uzupełniono wszystkich pól!");
-                                a.setTitle("Błąd!");
+                                a.setHeaderText("All fields must be filled!");
+                                a.setTitle("Error!");
                                 a.showAndWait();
                                 break;
                         }
@@ -303,96 +332,106 @@ public class BattleshipMain extends Application {
                 Scene scene = new Scene(root, 400, 600);
 
                 stage.setScene(scene);
+                stage.setResizable(false);
+                stage.setTitle("Battleships");
                 stage.show();
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
     }
+
+    /**
+     * Creates app starting screen.
+     * @param stage that start screen appears on
+     */
     public void init(Stage stage) {
         Platform.runLater(() -> {
             try {
                 BorderPane mainScreenPane=new BorderPane();
                 HBox title=new HBox();
                 title.setAlignment(Pos.CENTER);
-                // Text titleText=;
+
                 Text titleText=new Text("Battleships");
                 titleText.setFont(Font.font("system",36));
                 title.getChildren().add(titleText);
                 HBox.setMargin(title,new Insets(0,105,0,0));
 
-                //title.setMinWidth(400);
-
-                Button startButton=new Button("Rozpocznij grę");
+                Button startButton=new Button("Start game");
                 startButton.setOnAction(event -> {
                     loginScreen(stage);
                 });
+
                 HBox buttonHbox=new HBox(startButton);
-                // buttonHbox.setMinWidth(100);
                 buttonHbox.setAlignment(Pos.CENTER);
 
                 HBox.setMargin(buttonHbox,new Insets(11,20,0,0));
-                // buttonHbox.maxHeight(50);
-                // buttonHbox.setAlignment(Pos.CENTER);
                 HBox topWrap=new HBox(title,buttonHbox);
                 topWrap.setAlignment(Pos.CENTER_RIGHT);
                 topWrap.setPrefHeight(150);
                 mainScreenPane.setTop(topWrap);
                 TableView table=new TableView<UserRankingDTO>();
-                TableColumn place=new TableColumn<>("Miejsce w rankingu");
+
+                TableColumn place=new TableColumn<>("Place in ranking");
                 place.setCellValueFactory(new PropertyValueFactory<>("number"));
                 place.setReorderable(false);
                 place.setSortable(false);
                 place.setPrefWidth(128);
-                TableColumn name=new TableColumn<>("Nazwa gracza");
+
+                TableColumn name=new TableColumn<>("Username");
                 name.setCellValueFactory(new PropertyValueFactory<>("username"));
                 name.setReorderable(false);
                 name.setSortable(false);
                 name.setPrefWidth(110);
-                TableColumn winNumber=new TableColumn<>("Ilość wygranych");
+
+                TableColumn winNumber=new TableColumn<>("Games won");
                 winNumber.setCellValueFactory(new PropertyValueFactory<>("gameWin"));
                 winNumber.setReorderable(false);
                 winNumber.setSortable(false);
                 winNumber.setPrefWidth(106);
+
                 table.getColumns().addAll(place,name,winNumber);
                 HBox ranking=new HBox(table);
                 ranking.setAlignment(Pos.CENTER);
-                //HBox.setMargin(ranking,new Insets(0,0,0,20));
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
-                //
                 List<UserRankingDTO> rankingList= RankingController.getInstance().findTopTenPlayers();
                 for(UserRankingDTO user:rankingList){
                     table.getItems().add(user);
                 }
+
                 mainScreenPane.setBottom(spaceFill);
                 mainScreenPane.setCenter(ranking);
 
                 stage.setScene(new Scene(mainScreenPane,600,750));
+                stage.setTitle("Battleships");
+                stage.setResizable(false);
                 stage.show();
 
 
-
-
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
     }
 
+    /**
+     * Creates primary stage.
+     */
     public void buildScene() {
         Platform.runLater(() -> {
             Scene scene = new Scene(createContent());
-            this.primaryStage.setTitle(username);
+            this.primaryStage.setTitle("Battleships - " + username);
             this.primaryStage.setScene(scene);
             this.primaryStage.setResizable(false);
             this.primaryStage.show();
         });
     }
 
-
+    /**
+     * Starting game session.
+     * @param primaryStage that all scenes appear on
+     */
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -402,14 +441,15 @@ public class BattleshipMain extends Application {
                 HibernateUtil.getSessionFactory().openSession();
                 init(this.primaryStage);
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
 
     }
 
-
+    /**
+     * Finishes game.
+     */
     @Override
     public void stop() {
         System.out.println("App exit");
@@ -428,6 +468,10 @@ public class BattleshipMain extends Application {
         }, "Shutdown-thread"));
     }
 
+    /**
+     * Sends message to server and opponent
+     * @param msg message
+     */
     private void send(String msg) {
         try {
             System.out.println("SEND MESSAGE: " + msg);
@@ -438,18 +482,23 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeConnection();
         } catch (NullPointerException e) {
+            System.out.println("Message is null, cannot send");
         }
     }
 
-
+    /**
+     * Handles click event
+     * @param cords coordinates
+     */
     public void checkHit(String cords) {
         Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
-        System.out.println("Sprawdz pole: " + cell.x + cell.y);
+        System.out.println("Check cell: " + cell.x + cell.y);
         int state = cell.shoot();
         if (state == 0) {
             send("hit");
-        }else if(state == 1){
+        } else if(state == 1){
             send("hit");
+
             if (playerBoard.ships == 0) {
                 RankingController.getInstance().updateRanking(this.username, "lose");
                 send("win");
@@ -457,16 +506,20 @@ public class BattleshipMain extends Application {
                 System.out.println("GAME LOST");
                 enemyTurn = true;
                 endGameScreen();
-            }else {
+            } else {
                 send("sunk");
                 addMessage("Your ship has been sunk.\n");
             }
+
         } else if(state == -1) {
             send("miss");
             enemyTurn = false;
         }
     }
 
+    /**
+     * Restarting game.
+     */
     public void restartGame() {
         System.out.println("Restarting game");
 
@@ -484,8 +537,10 @@ public class BattleshipMain extends Application {
         buildScene();
     }
 
+    /**
+     * Creates popup for ending game.
+     */
     public void endGameScreen() {
-        //enemyTurn = true;
 
         Platform.runLater(() -> {
             try {
@@ -519,7 +574,7 @@ public class BattleshipMain extends Application {
                 popupStage.initOwner(primaryStage);
                 popupStage.initModality(Modality.APPLICATION_MODAL);
                 popupStage.setScene(new Scene(pauseRoot, Color.TRANSPARENT));
-                System.out.println(pauseRoot.getWidth());
+
                 popupStage.setX(primaryStage.getX() + (primaryStage.getWidth() / 2) - pauseRoot.getPrefWidth() / 2);
                 popupStage.setY(primaryStage.getY() + (primaryStage.getHeight() / 2) - pauseRoot.getPrefHeight() / 2);
 
@@ -533,15 +588,17 @@ public class BattleshipMain extends Application {
                     Platform.exit();
                 });
 
+                popupStage.setResizable(false);
                 popupStage.show();
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
     }
 
-    // send chat message with specific prefix
+    /**
+     * Send chat message with specific prefix
+     */
     public void chatWriter() {
         new Thread(new Runnable() {
             @Override
@@ -556,6 +613,9 @@ public class BattleshipMain extends Application {
         }).start();
     }
 
+    /**
+     * Listens for message.
+     */
     public void listenForMessage() {
         new Thread(new Runnable() {
             @Override
@@ -565,7 +625,7 @@ public class BattleshipMain extends Application {
                 while (socket.isConnected()) {
                     try {
                         msgFromGroupChat = bufferedReader.readLine();
-                        System.out.println("Co dostał: " + msgFromGroupChat);
+                        System.out.println("Raw Message: " + msgFromGroupChat);
 
 
                         // if someone left, and the game has no result (someone left during game) and was started then restart game
@@ -582,7 +642,6 @@ public class BattleshipMain extends Application {
                         // chat communication
                         if (msgFromGroupChat.startsWith("communication:")) {
                             addMessage(msgFromGroupChat.substring(14)+"\n");
-                            System.out.println(msgFromGroupChat.substring(14));
                             continue;
                         }
 
@@ -632,7 +691,6 @@ public class BattleshipMain extends Application {
                                             if(msgFromGroupChat.equals("sunk"))
                                                 addMessage("Sunk an enemy ship.\n");
                                             globalMessage = msgFromGroupChat;
-                                            System.out.println("USTAWIA CZYU NIE" + globalMessage);
                                         } finally {
                                             lock.unlock();
                                         }
@@ -658,6 +716,9 @@ public class BattleshipMain extends Application {
         }).start();
     }
 
+    /**
+     * Closing game connection.
+     */
     public void closeConnection() {
         try {
             if (bufferedWriter != null) {
