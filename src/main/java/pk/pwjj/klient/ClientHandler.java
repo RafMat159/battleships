@@ -9,7 +9,6 @@ import java.util.Set;
 
 public class ClientHandler implements Runnable{
 
-//    public static ArrayList<pk.pwjj.klient.ClientHandler> clientHandlers = new ArrayList<>();
     public static HashMap<Integer, ArrayList<ClientHandler>> clientMap = new HashMap<>();
     public static HashMap<Integer, Boolean> available = new HashMap<>();
     public static Set<String> users = new HashSet<>();
@@ -37,21 +36,19 @@ public class ClientHandler implements Runnable{
         ArrayList<ClientHandler> arr = clientMap.get(table);
         if (arr != null) {
             arr.add(this);
-//            startsFirst = true;
             System.out.println(arr.size());
             if (arr.size() == 2) {
                 available.put(table, false);
                 broadcastMessage("first");
                 sendToClient("second");
             }
-//            clientMap.put(table, arr);
         }
         else{
             arr = new ArrayList<>();
             arr.add(this);
         }
         clientMap.put(table, arr);
-        System.out.println("User: "+clientUsername+", dodano do stolu: "+table);
+        System.out.println("User: "+clientUsername+", added to table: "+table);
     }
 
 
@@ -150,7 +147,7 @@ public class ClientHandler implements Runnable{
         try {
             var removingSuccessfull = clientMap.get(table).remove(this);
             if (removingSuccessfull) {
-                System.out.println("User: " + clientUsername + ", usunięto ze stołu: " + table);
+                System.out.println("User: " + clientUsername + ", removed from table: " + table);
                 if (clientMap.get(table).size() == 0) {
                     System.out.println("Table " + table + " empty");
                     clientMap.put(table, null);

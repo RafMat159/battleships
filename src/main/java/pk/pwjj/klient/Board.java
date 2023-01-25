@@ -31,12 +31,12 @@ public class Board extends Parent {
 
         titleText.setFont(Font.font("verdana", FontWeight.BOLD,15));
         if(enemy==false) {
-            titleText.setText("Moje statki");
+            titleText.setText("My ships");
             title.getChildren().add(titleText);
             title.setPadding(new Insets(0,0,0,30));
         }
         else {
-            titleText.setText("Statki przeciwnika");
+            titleText.setText("Opponent's ships");
             title.getChildren().add(titleText);
             title.setPadding(new Insets(0,0,0,35));
         }

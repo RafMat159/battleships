@@ -68,12 +68,12 @@ public class BattleshipMain extends Application {
 
             Board.Cell cell = (Board.Cell) event.getSource();
 
-            // tu sprawdza czy raz już ktoś szczzelił
+            // check if cell was already shot
             if (cell.wasShot) {
                 return;
             }
 
-            //wysyła wiadomość
+            // send message what cell do you shoot
             if (start) {
                 send(String.valueOf(cell.x) + String.valueOf(cell.y));
                 enemyTurn = true;
@@ -101,7 +101,7 @@ public class BattleshipMain extends Application {
 
                         cell.setFill(Color.BLACK);
 
-                        // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
+                        // if ship was hit, set it's color to red and shoot again
                         if (resp.equals("hit") || resp.equals("sunk")) {
                             enemyTurn = false;
                             cell.setFill(Color.RED);
@@ -114,12 +114,10 @@ public class BattleshipMain extends Application {
                             enemyTurn = true;
                             send("end");
                             cell.setDisable(true);
-//                                break;
                         }
 
                     } finally {
                         lock.unlock();
-                        System.out.println("CATCH");
                     }
 
 
@@ -252,8 +250,8 @@ public class BattleshipMain extends Application {
                         switch (resp) {
 
                             case 0:
-                                a = new Alert(Alert.AlertType.NONE, "Wciśnij ok aby rozpocząć grę", ButtonType.OK);
-                                a.setTitle("Utworzono konto");
+                                a = new Alert(Alert.AlertType.NONE, "Press ok to start the game", ButtonType.OK);
+                                a.setTitle("Account created");
                                 a.showAndWait();
 
                             case 1:
@@ -276,15 +274,15 @@ public class BattleshipMain extends Application {
 
                             case -1:
                                 a = new Alert(Alert.AlertType.ERROR);
-                                a.setHeaderText("Wpisano złe hasło!");
-                                a.setTitle("Odmowa dostępu!");
+                                a.setHeaderText("Password incorrect!");
+                                a.setTitle("Access denied!");
                                 a.showAndWait();
                                 break;
 
                             default:
                                 a = new Alert(Alert.AlertType.WARNING);
-                                a.setHeaderText("Nie uzupełniono wszystkich pól!");
-                                a.setTitle("Błąd!");
+                                a.setHeaderText("All fields must be filled!");
+                                a.setTitle("Error!");
                                 a.showAndWait();
                                 break;
                         }
@@ -306,7 +304,6 @@ public class BattleshipMain extends Application {
                 stage.setTitle("Battleships");
                 stage.show();
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
@@ -317,56 +314,56 @@ public class BattleshipMain extends Application {
                 BorderPane mainScreenPane=new BorderPane();
                 HBox title=new HBox();
                 title.setAlignment(Pos.CENTER);
-                // Text titleText=;
+
                 Text titleText=new Text("Battleships");
                 titleText.setFont(Font.font("system",36));
                 title.getChildren().add(titleText);
                 HBox.setMargin(title,new Insets(0,105,0,0));
 
-                //title.setMinWidth(400);
-
-                Button startButton=new Button("Rozpocznij grę");
+                Button startButton=new Button("Start game");
                 startButton.setOnAction(event -> {
                     loginScreen(stage);
                 });
+
                 HBox buttonHbox=new HBox(startButton);
-                // buttonHbox.setMinWidth(100);
                 buttonHbox.setAlignment(Pos.CENTER);
 
                 HBox.setMargin(buttonHbox,new Insets(11,20,0,0));
-                // buttonHbox.maxHeight(50);
-                // buttonHbox.setAlignment(Pos.CENTER);
                 HBox topWrap=new HBox(title,buttonHbox);
                 topWrap.setAlignment(Pos.CENTER_RIGHT);
                 topWrap.setPrefHeight(150);
                 mainScreenPane.setTop(topWrap);
                 TableView table=new TableView<UserRankingDTO>();
-                TableColumn place=new TableColumn<>("Miejsce w rankingu");
+
+                TableColumn place=new TableColumn<>("Place in ranking");
                 place.setCellValueFactory(new PropertyValueFactory<>("number"));
                 place.setReorderable(false);
                 place.setSortable(false);
                 place.setPrefWidth(128);
-                TableColumn name=new TableColumn<>("Nazwa gracza");
+
+                TableColumn name=new TableColumn<>("Username");
                 name.setCellValueFactory(new PropertyValueFactory<>("username"));
                 name.setReorderable(false);
                 name.setSortable(false);
                 name.setPrefWidth(110);
-                TableColumn winNumber=new TableColumn<>("Ilość wygranych");
+
+                TableColumn winNumber=new TableColumn<>("Games won");
                 winNumber.setCellValueFactory(new PropertyValueFactory<>("gameWin"));
                 winNumber.setReorderable(false);
                 winNumber.setSortable(false);
                 winNumber.setPrefWidth(106);
+
                 table.getColumns().addAll(place,name,winNumber);
                 HBox ranking=new HBox(table);
                 ranking.setAlignment(Pos.CENTER);
-                //HBox.setMargin(ranking,new Insets(0,0,0,20));
                 HBox spaceFill=new HBox();
                 spaceFill.setPrefSize(600,100);
-                //
+
                 List<UserRankingDTO> rankingList= GameController.getInstance().findTopTenPlayers();
                 for(UserRankingDTO user:rankingList){
                     table.getItems().add(user);
                 }
+
                 mainScreenPane.setBottom(spaceFill);
                 mainScreenPane.setCenter(ranking);
 
@@ -377,7 +374,6 @@ public class BattleshipMain extends Application {
 
 
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
@@ -403,7 +399,6 @@ public class BattleshipMain extends Application {
                 HibernateUtil.getSessionFactory().openSession();
                 init(this.primaryStage);
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
@@ -446,7 +441,7 @@ public class BattleshipMain extends Application {
 
     public void checkHit(String cords) {
         Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
-        System.out.println("Sprawdz pole: " + cell.x + cell.y);
+        System.out.println("Check cell: " + cell.x + cell.y);
         int state = cell.shoot();
         if (state == 0) {
             send("hit");
@@ -489,7 +484,6 @@ public class BattleshipMain extends Application {
     }
 
     public void endGameScreen() {
-        //enemyTurn = true;
 
         Platform.runLater(() -> {
             try {
@@ -523,7 +517,7 @@ public class BattleshipMain extends Application {
                 popupStage.initOwner(primaryStage);
                 popupStage.initModality(Modality.APPLICATION_MODAL);
                 popupStage.setScene(new Scene(pauseRoot, Color.TRANSPARENT));
-                System.out.println(pauseRoot.getWidth());
+
                 popupStage.setX(primaryStage.getX() + (primaryStage.getWidth() / 2) - pauseRoot.getPrefWidth() / 2);
                 popupStage.setY(primaryStage.getY() + (primaryStage.getHeight() / 2) - pauseRoot.getPrefHeight() / 2);
 
@@ -540,7 +534,6 @@ public class BattleshipMain extends Application {
                 popupStage.setResizable(false);
                 popupStage.show();
             } catch (Exception e) {
-                System.out.println("BŁĄD jakiś");
                 e.printStackTrace();
             }
         });
@@ -579,12 +572,6 @@ public class BattleshipMain extends Application {
                             restartGame();
                             continue;
                         }
-
-                        // user already logged in
-//                        if (msgFromGroupChat.equals("login error")){
-//                            globalMessage = "login error";
-//                            continue;
-//                        }
 
                         // enemy left before game start
                         if (msgFromGroupChat.equals("left") && !(winStatus == null && start))
@@ -649,7 +636,7 @@ public class BattleshipMain extends Application {
 
                                     case "win":
                                         GameController.getInstance().updateRanking(username, "win");
-                                        addMessage("YOU WIN");
+                                        addMessage("YOU WIN\n");
                                         winStatus = "GAME WON";
                                         endGameScreen();
                                         break;
