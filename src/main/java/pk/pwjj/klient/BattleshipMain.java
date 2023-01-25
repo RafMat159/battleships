@@ -177,9 +177,6 @@ public class BattleshipMain extends Application {
         button.setMinWidth(50);
         button.setDefaultButton(true);
 
-//        VBox vBoxChat = new VBox(enterMessageField);
-//        vBoxChat.setPadding(new Insets(10, 10, 10, 10));
-
         VBox vBoxChatIncoming = new VBox(displayAllMessages);
         vBoxChatIncoming.setPadding(new Insets(10, 10, 10, 10));
 
@@ -189,13 +186,6 @@ public class BattleshipMain extends Application {
         GridPane rootPane = new GridPane();
         rootPane.add(vBoxChatIncoming, 0, 0);
         rootPane.add(hBoxSend, 0, 1);
-//        rootPane.add(vBoxEnter, 1, 1);
-
-//        Scene scene = new Scene(rootPane, 800, 700, Color.WHITE);
-//        stage.setScene(scene);
-//        stage.setTitle("Chat");
-//        stage.show();
-
 
         enterMessageField.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -232,6 +222,9 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeConnection();
         }
+
+        globalMessage = bufferedReader.readLine();
+        System.out.println(globalMessage);
         listenForMessage();
         chatWriter();
     }
@@ -272,9 +265,13 @@ public class BattleshipMain extends Application {
                                     throw new RuntimeException(e);
                                 }
 
-                                buildScene();
-//                                to je chyba niepotrzebne
-//                                listenForMessage();
+                                if (globalMessage.equals("login error")) {
+                                    a = new Alert(Alert.AlertType.ERROR);
+                                    a.setHeaderText("User already logged in!");
+                                    a.setTitle("Access denied!");
+                                    a.showAndWait();
+                                } else if (globalMessage.equals("login successful"))
+                                    buildScene();
                                 break;
 
                             case -1:
@@ -305,6 +302,8 @@ public class BattleshipMain extends Application {
                 Scene scene = new Scene(root, 400, 600);
 
                 stage.setScene(scene);
+                stage.setResizable(false);
+                stage.setTitle("Battleships");
                 stage.show();
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
@@ -372,9 +371,9 @@ public class BattleshipMain extends Application {
                 mainScreenPane.setCenter(ranking);
 
                 stage.setScene(new Scene(mainScreenPane,600,750));
+                stage.setTitle("Battleships");
+                stage.setResizable(false);
                 stage.show();
-
-
 
 
             } catch (Exception e) {
@@ -387,7 +386,7 @@ public class BattleshipMain extends Application {
     public void buildScene() {
         Platform.runLater(() -> {
             Scene scene = new Scene(createContent());
-            this.primaryStage.setTitle(username);
+            this.primaryStage.setTitle("Battleships - " + username);
             this.primaryStage.setScene(scene);
             this.primaryStage.setResizable(false);
             this.primaryStage.show();
@@ -440,6 +439,7 @@ public class BattleshipMain extends Application {
         } catch (IOException e) {
             closeConnection();
         } catch (NullPointerException e) {
+            System.out.println("Message is null, cannot send");
         }
     }
 
@@ -450,8 +450,9 @@ public class BattleshipMain extends Application {
         int state = cell.shoot();
         if (state == 0) {
             send("hit");
-        }else if(state == 1){
+        } else if(state == 1){
             send("hit");
+
             if (playerBoard.ships == 0) {
                 GameController.getInstance().updateRanking(this.username, "lose");
                 send("win");
@@ -459,10 +460,11 @@ public class BattleshipMain extends Application {
                 System.out.println("GAME LOST");
                 enemyTurn = true;
                 endGameScreen();
-            }else {
+            } else {
                 send("sunk");
                 addMessage("Your ship has been sunk.\n");
             }
+
         } else if(state == -1) {
             send("miss");
             enemyTurn = false;
@@ -535,6 +537,7 @@ public class BattleshipMain extends Application {
                     Platform.exit();
                 });
 
+                popupStage.setResizable(false);
                 popupStage.show();
             } catch (Exception e) {
                 System.out.println("BŁĄD jakiś");
@@ -567,7 +570,7 @@ public class BattleshipMain extends Application {
                 while (socket.isConnected()) {
                     try {
                         msgFromGroupChat = bufferedReader.readLine();
-                        System.out.println("Co dostał: " + msgFromGroupChat);
+                        System.out.println("Raw Message: " + msgFromGroupChat);
 
 
                         // if someone left, and the game has no result (someone left during game) and was started then restart game
@@ -577,6 +580,12 @@ public class BattleshipMain extends Application {
                             continue;
                         }
 
+                        // user already logged in
+//                        if (msgFromGroupChat.equals("login error")){
+//                            globalMessage = "login error";
+//                            continue;
+//                        }
+
                         // enemy left before game start
                         if (msgFromGroupChat.equals("left") && !(winStatus == null && start))
                             addMessage("Your enemy left - waiting for another to join\n");
@@ -584,7 +593,6 @@ public class BattleshipMain extends Application {
                         // chat communication
                         if (msgFromGroupChat.startsWith("communication:")) {
                             addMessage(msgFromGroupChat.substring(14)+"\n");
-                            System.out.println(msgFromGroupChat.substring(14));
                             continue;
                         }
 
@@ -634,7 +642,6 @@ public class BattleshipMain extends Application {
                                             if(msgFromGroupChat.equals("sunk"))
                                                 addMessage("Sunk an enemy ship.\n");
                                             globalMessage = msgFromGroupChat;
-                                            System.out.println("USTAWIA CZYU NIE" + globalMessage);
                                         } finally {
                                             lock.unlock();
                                         }
