@@ -157,7 +157,7 @@ public class Board extends Parent {
             setStroke(Color.BLACK);
         }
 
-        public boolean shoot() {
+        public int shoot() {
             wasShot = true;
             setFill(Color.BLACK);
 
@@ -166,11 +166,12 @@ public class Board extends Parent {
                 setFill(Color.RED);
                 if (!ship.isAlive()) {
                     board.ships--;
+                    return 1;
                 }
-                return true;
+                return 0;
             }
 
-            return false;
+            return -1;
         }
     }
 }

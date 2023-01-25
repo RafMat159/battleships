@@ -102,7 +102,7 @@ public class BattleshipMain extends Application {
                         cell.setFill(Color.BLACK);
 
                         // jeśli trafione to można strzelać po raz kolejny i zamalować kafelek
-                        if (resp.equals("hit")) {
+                        if (resp.equals("hit") || resp.equals("sunk")) {
                             enemyTurn = false;
                             cell.setFill(Color.RED);
                             cell.setDisable(true);
@@ -447,8 +447,10 @@ public class BattleshipMain extends Application {
     public void checkHit(String cords) {
         Cell cell = playerBoard.getCell(cords.charAt(0) - '0', cords.charAt(1) - '0');
         System.out.println("Sprawdz pole: " + cell.x + cell.y);
-        if (cell.shoot()) {
-
+        int state = cell.shoot();
+        if (state == 0) {
+            send("hit");
+        }else if(state == 1){
             send("hit");
             if (playerBoard.ships == 0) {
                 GameController.getInstance().updateRanking(this.username, "lose");
@@ -457,9 +459,11 @@ public class BattleshipMain extends Application {
                 System.out.println("GAME LOST");
                 enemyTurn = true;
                 endGameScreen();
+            }else {
+                send("sunk");
+                addMessage("Your ship has been sunk.\n");
             }
-
-        } else {
+        } else if(state == -1) {
             send("miss");
             enemyTurn = false;
         }
@@ -622,10 +626,13 @@ public class BattleshipMain extends Application {
                                         enemyTurn = false;
                                         break;
 
+                                    case "sunk":
                                     case "hit":
                                     case "miss":
                                         lock.lock();
                                         try {
+                                            if(msgFromGroupChat.equals("sunk"))
+                                                addMessage("Sunk an enemy ship.\n");
                                             globalMessage = msgFromGroupChat;
                                             System.out.println("USTAWIA CZYU NIE" + globalMessage);
                                         } finally {
