@@ -5,9 +5,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/***
+ * ClientHandler is responsible for communication client-server
+ */
 public class ClientHandler implements Runnable{
 
-//    public static ArrayList<pk.pwjj.klient.ClientHandler> clientHandlers = new ArrayList<>();
     public static HashMap<Integer, ArrayList<ClientHandler>> clientMap = new HashMap<>();
     public static HashMap<Integer, Boolean> available = new HashMap<>();
     private Socket socket;
@@ -17,7 +19,10 @@ public class ClientHandler implements Runnable{
     private String clientUsername;
     private Boolean startsFirst=false;
 
-
+    /**
+     * Function that chooses first available table for certain client.
+     * @return number of table
+     */
     public int getClosestAvailable(){
         int maxKey = 0;
         for (Integer key : available.keySet()){
@@ -29,21 +34,23 @@ public class ClientHandler implements Runnable{
         return maxKey+1;
     }
 
+    /**
+     * Function responsible for adding first client to table.
+     * @throws IOException
+     */
     public void addToTable() throws IOException{
         table = getClosestAvailable();
         ArrayList<ClientHandler> arr = clientMap.get(table);
         if (arr != null) {
             arr.add(this);
-//            startsFirst = true;
             System.out.println(arr.size());
             if (arr.size() == 2) {
                 available.put(table, false);
-                broadcastMessage("first");
+                sendToOpponent("first");
                 this.bufferedWriter.write("second");
                 this.bufferedWriter.newLine();
                 this.bufferedWriter.flush();
             }
-//            clientMap.put(table, arr);
         }
         else{
             arr = new ArrayList<>();
@@ -53,6 +60,10 @@ public class ClientHandler implements Runnable{
         System.out.println("User: "+clientUsername+", dodano do stolu: "+table);
     }
 
+    /**
+     * Initiates ClientHandler class.
+     * @param socket of client
+     */
     public ClientHandler(Socket socket){
 
         try{
@@ -61,12 +72,15 @@ public class ClientHandler implements Runnable{
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.clientUsername = bufferedReader.readLine();
             this.addToTable();
-            broadcastMessage("SERVER:"+clientUsername+" joined chat");
+            sendToOpponent("SERVER:"+clientUsername+" joined chat");
         } catch (IOException e){
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
     }
 
+    /**
+     * Function that handles removing client from table and adding to new game.
+     */
     public void newGame(){
         removeFromTable();
         try{
@@ -75,10 +89,13 @@ public class ClientHandler implements Runnable{
             closeEverything(socket, bufferedReader, bufferedWriter);
         }
     }
+
+    /**
+     * Handles handles chat and game commands of certain client.
+     */
     @Override
     public void run(){
         String messageFromClient;
-
         while (socket.isConnected()){
             try{
                 messageFromClient = bufferedReader.readLine();
@@ -86,7 +103,7 @@ public class ClientHandler implements Runnable{
 
                 if(messageFromClient.startsWith("communication:")){                                         // chat communication
                     String strippedMessage = messageFromClient.substring(14);
-                    broadcastMessage("communication:"+clientUsername+": "+strippedMessage);
+                    sendToOpponent("communication:"+clientUsername+": "+strippedMessage);
                 }
                 else {
                     switch (messageFromClient) {                                                            // commands
@@ -97,7 +114,7 @@ public class ClientHandler implements Runnable{
                             closeEverything(socket, bufferedReader, bufferedWriter);
                             break;
                         default:
-                            broadcastMessage(messageFromClient);
+                            sendToOpponent(messageFromClient);
                     }
                 }
             } catch (Exception e){
@@ -107,7 +124,11 @@ public class ClientHandler implements Runnable{
         }
     }
 
-    public void broadcastMessage(String messageToSend){
+    /**
+     * Sends message to another client at table.
+     * @param messageToSend
+     */
+    public void sendToOpponent(String messageToSend){
         ArrayList<ClientHandler> arr = clientMap.get(table);
         for (ClientHandler clientHandler : arr){
             try {
@@ -123,6 +144,9 @@ public class ClientHandler implements Runnable{
         }
     }
 
+    /**
+     * Removes client from table.
+     */
     public void removeFromTable(){
         try {
             var removingSuccessfull = clientMap.get(table).remove(this);
@@ -132,7 +156,7 @@ public class ClientHandler implements Runnable{
                     System.out.println("Table " + table + " empty");
                     clientMap.put(table, null);
                 } else
-                    broadcastMessage("left");
+                    sendToOpponent("left");
                 available.put(table, true);
                 table = 0;
             }
@@ -141,6 +165,12 @@ public class ClientHandler implements Runnable{
         }
     }
 
+    /**
+     * Closes all connections of client.
+     * @param socket
+     * @param bufferedReader
+     * @param bufferedWriter
+     */
     public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter){
         if (table != 0)
             removeFromTable();
