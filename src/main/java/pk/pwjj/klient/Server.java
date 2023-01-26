@@ -13,20 +13,21 @@ public class Server {
 
     /**
      * Initiation of Server.
+     *
      * @param serverSocket socket that handles Server communication
      */
-    public Server(ServerSocket serverSocket){
+    public Server(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
     }
 
     /**
      * Starting Server.
      */
-    public void startServer(){
+    public void startServer() {
 
         try {
 
-            while(!serverSocket.isClosed()){
+            while (!serverSocket.isClosed()) {
 
                 Socket socket = serverSocket.accept();
                 System.out.println("A new client has connected!");
@@ -37,7 +38,7 @@ public class Server {
 
 
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             closeServerSocket();
         }
 
@@ -47,12 +48,12 @@ public class Server {
     /**
      * Closes socket of Server.
      */
-    public void closeServerSocket(){
-        try{
-            if(serverSocket != null){
+    public void closeServerSocket() {
+        try {
+            if (serverSocket != null) {
                 serverSocket.close();
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

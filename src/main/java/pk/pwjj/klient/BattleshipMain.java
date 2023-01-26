@@ -20,8 +20,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import pk.pwjj.DTO.UserRankingDTO;
 import pk.pwjj.HibernateUtil;
-import pk.pwjj.controller.RankingController;
 import pk.pwjj.controller.LoginController;
+import pk.pwjj.controller.RankingController;
 import pk.pwjj.klient.Board.Cell;
 
 import java.io.*;
@@ -37,31 +37,51 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class BattleshipMain extends Application {
 
-    /** true if ships have been placed and false if they have not or game is finished */
+    /**
+     * true if ships have been placed and false if they have not or game is finished
+     */
     private boolean running = false;
-    /** set for true if opponent have placed ships */
+    /**
+     * set for true if opponent have placed ships
+     */
     private boolean start = false;
-    /** false if it is current player's turn */
+    /**
+     * false if it is current player's turn
+     */
     private boolean enemyTurn = false;
-    /** indicates if player can place ships */
+    /**
+     * indicates if player can place ships
+     */
     private Boolean mayPlaceShips = false;
-    /** if game has ended indicates if player is winner or looser*/
+    /**
+     * if game has ended indicates if player is winner or looser
+     */
     private String winStatus = null;
-    /** game boards */
+    /**
+     * game boards
+     */
     private Board enemyBoard, playerBoard;
-    /** indicates how many ships player has left to place */
+    /**
+     * indicates how many ships player has left to place
+     */
     private int shipsToPlace = 5;
-    /** primary stage of game */
+    /**
+     * primary stage of game
+     */
     private Stage primaryStage;
 
-    /** text area for chat*/
+    /**
+     * text area for chat
+     */
     TextArea displayAllMessages = new TextArea();
 
     private Socket socket;
     private BufferedReader bufferedReader;
     private BufferedWriter bufferedWriter;
 
-    /** player name*/
+    /**
+     * player name
+     */
     private String username;
 
     private String globalMessage;
@@ -72,6 +92,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Creates player and enemy board.
+     *
      * @return returns border pane with
      */
     private Parent createContent() {
@@ -170,7 +191,8 @@ public class BattleshipMain extends Application {
     }
 
     /**
-     *  Adds message to current player chat.
+     * Adds message to current player chat.
+     *
      * @param msg message
      */
     public void addMessage(String msg) {
@@ -179,6 +201,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Creates grid pane for chat.
+     *
      * @return grid pane with chat
      */
     public GridPane createChat() {
@@ -213,8 +236,8 @@ public class BattleshipMain extends Application {
                 String s = enterMessageField.getText() + "\n";
                 enterMessageField.setText("");
                 if (!s.isBlank()) {
-                    send("communication:" +s);
-                    addMessage(username+": "+s);
+                    send("communication:" + s);
+                    addMessage(username + ": " + s);
                 }
             }
         });
@@ -223,8 +246,8 @@ public class BattleshipMain extends Application {
             String s = enterMessageField.getText() + "\n";
             enterMessageField.setText("");
             if (!s.isBlank()) {
-                send("communication:" +s);
-                addMessage(username+": "+s);
+                send("communication:" + s);
+                addMessage(username + ": " + s);
             }
         });
 
@@ -233,6 +256,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Creates new connection for player.
+     *
      * @throws Exception
      */
     public void newConnection() throws Exception {
@@ -256,9 +280,10 @@ public class BattleshipMain extends Application {
 
     /**
      * Creates login screen.
+     *
      * @param stage that login screen appears on
      */
-    public void loginScreen(Stage stage){
+    public void loginScreen(Stage stage) {
         Platform.runLater(() -> {
             try {
                 StackPane root = new StackPane();
@@ -343,67 +368,68 @@ public class BattleshipMain extends Application {
 
     /**
      * Creates app starting screen.
+     *
      * @param stage that start screen appears on
      */
     public void init(Stage stage) {
         Platform.runLater(() -> {
             try {
-                BorderPane mainScreenPane=new BorderPane();
-                HBox title=new HBox();
+                BorderPane mainScreenPane = new BorderPane();
+                HBox title = new HBox();
                 title.setAlignment(Pos.CENTER);
 
-                Text titleText=new Text("Battleships");
-                titleText.setFont(Font.font("system",36));
+                Text titleText = new Text("Battleships");
+                titleText.setFont(Font.font("system", 36));
                 title.getChildren().add(titleText);
-                HBox.setMargin(title,new Insets(0,105,0,0));
+                HBox.setMargin(title, new Insets(0, 105, 0, 0));
 
-                Button startButton=new Button("Start game");
+                Button startButton = new Button("Start game");
                 startButton.setOnAction(event -> {
                     loginScreen(stage);
                 });
 
-                HBox buttonHbox=new HBox(startButton);
+                HBox buttonHbox = new HBox(startButton);
                 buttonHbox.setAlignment(Pos.CENTER);
 
-                HBox.setMargin(buttonHbox,new Insets(11,20,0,0));
-                HBox topWrap=new HBox(title,buttonHbox);
+                HBox.setMargin(buttonHbox, new Insets(11, 20, 0, 0));
+                HBox topWrap = new HBox(title, buttonHbox);
                 topWrap.setAlignment(Pos.CENTER_RIGHT);
                 topWrap.setPrefHeight(150);
                 mainScreenPane.setTop(topWrap);
-                TableView table=new TableView<UserRankingDTO>();
+                TableView table = new TableView<UserRankingDTO>();
 
-                TableColumn place=new TableColumn<>("Place in ranking");
+                TableColumn place = new TableColumn<>("Place in ranking");
                 place.setCellValueFactory(new PropertyValueFactory<>("number"));
                 place.setReorderable(false);
                 place.setSortable(false);
                 place.setPrefWidth(128);
 
-                TableColumn name=new TableColumn<>("Username");
+                TableColumn name = new TableColumn<>("Username");
                 name.setCellValueFactory(new PropertyValueFactory<>("username"));
                 name.setReorderable(false);
                 name.setSortable(false);
                 name.setPrefWidth(110);
 
-                TableColumn winNumber=new TableColumn<>("Games won");
+                TableColumn winNumber = new TableColumn<>("Games won");
                 winNumber.setCellValueFactory(new PropertyValueFactory<>("gameWin"));
                 winNumber.setReorderable(false);
                 winNumber.setSortable(false);
                 winNumber.setPrefWidth(106);
 
-                table.getColumns().addAll(place,name,winNumber);
-                HBox ranking=new HBox(table);
+                table.getColumns().addAll(place, name, winNumber);
+                HBox ranking = new HBox(table);
                 ranking.setAlignment(Pos.CENTER);
-                HBox spaceFill=new HBox();
-                spaceFill.setPrefSize(600,100);
-                List<UserRankingDTO> rankingList= RankingController.getInstance().findTopTenPlayers();
-                for(UserRankingDTO user:rankingList){
+                HBox spaceFill = new HBox();
+                spaceFill.setPrefSize(600, 100);
+                List<UserRankingDTO> rankingList = RankingController.getInstance().findTopTenPlayers();
+                for (UserRankingDTO user : rankingList) {
                     table.getItems().add(user);
                 }
 
                 mainScreenPane.setBottom(spaceFill);
                 mainScreenPane.setCenter(ranking);
 
-                stage.setScene(new Scene(mainScreenPane,600,750));
+                stage.setScene(new Scene(mainScreenPane, 600, 750));
                 stage.setTitle("Battleships");
                 stage.setResizable(false);
                 stage.show();
@@ -430,6 +456,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Starting game session.
+     *
      * @param primaryStage that all scenes appear on
      */
     @Override
@@ -470,6 +497,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Sends message to server and opponent
+     *
      * @param msg message
      */
     private void send(String msg) {
@@ -488,6 +516,7 @@ public class BattleshipMain extends Application {
 
     /**
      * Handles click event
+     *
      * @param cords coordinates
      */
     public void checkHit(String cords) {
@@ -496,7 +525,7 @@ public class BattleshipMain extends Application {
         int state = cell.shoot();
         if (state == 0) {
             send("hit");
-        } else if(state == 1){
+        } else if (state == 1) {
             send("hit");
 
             if (playerBoard.ships == 0) {
@@ -511,7 +540,7 @@ public class BattleshipMain extends Application {
                 addMessage("Your ship has been sunk.\n");
             }
 
-        } else if(state == -1) {
+        } else if (state == -1) {
             send("miss");
             enemyTurn = false;
         }
@@ -641,7 +670,7 @@ public class BattleshipMain extends Application {
 
                         // chat communication
                         if (msgFromGroupChat.startsWith("communication:")) {
-                            addMessage(msgFromGroupChat.substring(14)+"\n");
+                            addMessage(msgFromGroupChat.substring(14) + "\n");
                             continue;
                         }
 
@@ -688,7 +717,7 @@ public class BattleshipMain extends Application {
                                     case "miss":
                                         lock.lock();
                                         try {
-                                            if(msgFromGroupChat.equals("sunk"))
+                                            if (msgFromGroupChat.equals("sunk"))
                                                 addMessage("Sunk an enemy ship.\n");
                                             globalMessage = msgFromGroupChat;
                                         } finally {

@@ -10,12 +10,14 @@ import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
  */
 public class HibernateUtil {
 
-    /**The constant that is used to store SessionFactory object*/
+    /**
+     * The constant that is used to store SessionFactory object
+     */
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
     /**
      * Function that closes the session factory
-     * */
+     */
     static void close() {
         if (sessionFactory != null) {
             sessionFactory.close();
@@ -24,16 +26,18 @@ public class HibernateUtil {
 
     /**
      * Function that returns an instance of the SessionFactory class
+     *
      * @return an instance of the SessionFactory class
-     * */
+     */
     public static SessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
     /**
      * Function that builds SessionFactory
+     *
      * @return built SessionFactory
-     * */
+     */
     private static SessionFactory buildSessionFactory() {
         // A SessionFactory is set up once for an application!
         final StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
@@ -51,7 +55,7 @@ public class HibernateUtil {
 
     /**
      * Hibernate (JPA) needs it.
-     * */
+     */
     private HibernateUtil() {
     }
 

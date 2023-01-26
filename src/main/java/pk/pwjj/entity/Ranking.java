@@ -4,7 +4,7 @@ import javax.persistence.*;
 
 /**
  * Entity Ranking
- * */
+ */
 @Entity
 @Table(name = "ranking")
 public class Ranking {
@@ -21,7 +21,7 @@ public class Ranking {
 
     /**
      * Hibernate (JPA) needs it.
-     * */
+     */
     @SuppressWarnings("unused")
     public Ranking() {
     }
