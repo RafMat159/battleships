@@ -481,7 +481,7 @@ public class BattleshipMain extends Application {
     public void stop() {
         System.out.println("App exit");
         send("end game");
-        HibernateUtil.getSessionFactory().close();
+        HibernateUtil.close();
         closeConnection();
         System.exit(0);
     }

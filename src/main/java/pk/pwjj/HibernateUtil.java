@@ -18,7 +18,7 @@ public class HibernateUtil {
     /**
      * Function that closes the session factory
      */
-    static void close() {
+    public static void close() {
         if (sessionFactory != null) {
             sessionFactory.close();
         }
